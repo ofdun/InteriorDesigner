@@ -5,12 +5,9 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<HBox alignment="CENTER" prefHeight="245.0" prefWidth="326.0" spacing="5.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ofdun.interiordesigner.CanvasController">
-   <children>
-      <Canvas fx:id="_canvas" height="245.0" onMousePressed="#onMousePressed" onMouseReleased="#onMouseReleased" width="231.0" />
-      <Button fx:id="_drawCubeButton" mnemonicParsing="false" onAction="#onDrawCubeButtonPressed" text="DrawCube" />
-   </children>
-   <opaqueInsets>
-      <Insets />
-   </opaqueInsets>
+<HBox alignment="CENTER" prefHeight="245.0" prefWidth="326.0" spacing="5.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ofdun.interiordesigner.controllers.MainController">
+
+   <fx:include source="canvas-view.fxml" fx:id="_canvas"/>
+   <fx:include source="controls-view.fxml" fx:id="_controls"/>
+
 </HBox>

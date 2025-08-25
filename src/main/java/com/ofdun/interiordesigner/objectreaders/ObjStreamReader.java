@@ -1,6 +1,8 @@
-package com.ofdun.interiordesigner.objectreader;
+package com.ofdun.interiordesigner.objectreaders;
 
 import jakarta.inject.Singleton;
+import javafx.geometry.Point3D;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -10,8 +12,8 @@ import java.util.List;
 @Singleton
 public class ObjStreamReader implements IObjectReader {
 
-    private List<Float> vertices;
-    private List<Integer> faces;
+    private List<Point3D> vertices;
+    private List<List<Integer>> faces;
     private boolean isParsed = false;
     private BufferedReader reader;
 
@@ -47,15 +49,20 @@ public class ObjStreamReader implements IObjectReader {
 
             switch (tokens[0]) {
                 case "v":
-                    vertices.add(Float.parseFloat(tokens[1]));
-                    vertices.add(Float.parseFloat(tokens[2]));
-                    vertices.add(Float.parseFloat(tokens[3]));
+                    var point = new Point3D(
+                            Float.parseFloat(tokens[1]),
+                            Float.parseFloat(tokens[2]),
+                            Float.parseFloat(tokens[3])
+                    );
+                    vertices.add(point);
                     break;
                 case "f":
+                    List<Integer> current = new ArrayList<>();
                     for (int i = 1; i < tokens.length; i++) {
                         String[] indices = tokens[i].split("/");
-                        faces.add(Integer.parseInt(indices[0]) - 1);
+                        current.add(Integer.parseInt(indices[0]) - 1);
                     }
+                    faces.add(current);
                     break;
                 default:
                     break;
@@ -65,7 +72,7 @@ public class ObjStreamReader implements IObjectReader {
     }
 
     @Override
-    public List<Float> readAllVertices() {
+    public List<Point3D> readAllVertices() {
         try {
             parseFile();
         } catch (IOException e) {
@@ -76,7 +83,7 @@ public class ObjStreamReader implements IObjectReader {
     }
 
     @Override
-    public List<Integer> readAllFaces() {
+    public List<List<Integer>> readAllFaces() {
         try {
             parseFile();
         } catch (IOException e) {
