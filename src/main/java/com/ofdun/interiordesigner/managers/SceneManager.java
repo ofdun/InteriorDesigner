@@ -40,6 +40,7 @@ public class SceneManager {
     private void transformSelectedMeshes(SimpleMatrix transform) {
         for (String selectedMeshId : _controlsController.getHighlightedListView()) {
             var mesh = _objects.get(selectedMeshId);
+//            log.info(mesh.getCenter().toString());
             if (mesh != null) {
                 mesh.applyTransform(transform);
             }
