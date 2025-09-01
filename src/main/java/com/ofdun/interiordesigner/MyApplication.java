@@ -29,17 +29,19 @@ public class MyApplication extends Application {
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(MyApplication.class.getResource("hello-view.fxml"));
         fxmlLoader.setControllerFactory(context::getBean);
-        Scene scene = new Scene(fxmlLoader.load(), 600, 600);
+        Scene scene = new Scene(fxmlLoader.load(), 1100, 800);
 //        stage.setTitle("Hello!");
         stage.setScene(scene);
 
         var sm = context.getBean(SceneManager.class);
         var ol = context.getBean(ObjectLoader.class);
 
-        try (var file = new BufferedReader(new FileReader("cube.obj"))) {
+        try (var file = new BufferedReader(new FileReader("room.obj"))) {
             var meshView = ol.load(file);
             sm.addMeshView(meshView);
         }
+
+        sm.renderAllMeshes();
 
         stage.show();
     }

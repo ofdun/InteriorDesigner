@@ -38,6 +38,8 @@ dependencies {
     implementation("com.dlsc.formsfx:formsfx-core:11.6.0")
     implementation("net.synedra:validatorfx:0.5.0")
 
+    implementation("org.ejml:ejml-simple:0.43")
+
     implementation("org.slf4j:slf4j-api:2.0.16")
     implementation("ch.qos.logback:logback-classic:1.5.16")
 
