@@ -4,6 +4,7 @@ import com.ofdun.interiordesigner.models.Mesh;
 import com.ofdun.interiordesigner.objectreaders.IObjectReader;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.ejml.simple.SimpleMatrix;
 
 import java.io.BufferedReader;
 

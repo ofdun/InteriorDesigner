@@ -3,4 +3,4 @@
 <?import javafx.scene.canvas.*?>
 
 
-<Canvas fx:id="_canvas" height="500" onMousePressed="#onMousePressed" width="500" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ofdun.interiordesigner.controllers.CanvasController" />
+<Canvas fx:id="_canvas" height="800" onMousePressed="#onMousePressed" width="1000" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ofdun.interiordesigner.controllers.CanvasController" />

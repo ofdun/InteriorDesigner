@@ -32,8 +32,7 @@ public class CanvasController {
     }
 
     private void setupCanvas() {
-        _invisibleGraphicsContext.setFill(Color.GRAY);
-        _invisibleGraphicsContext.fillRect(0, 0, _canvas.getWidth(), _canvas.getHeight());
+        fillDefaultColor();
         _invisibleGraphicsContext.setStroke(Color.BLACK);
         _invisibleGraphicsContext.setLineWidth(2);
         render();
@@ -41,6 +40,17 @@ public class CanvasController {
 
     public void render() {
         _graphicsContext.drawImage(_invisibleCanvas.snapshot(null, null), 0, 0);
+        clearInvisibleCanvas();
+    }
+
+    private void fillDefaultColor() {
+        _invisibleGraphicsContext.setFill(Color.GRAY);
+        _invisibleGraphicsContext.fillRect(0, 0, _invisibleCanvas.getWidth(), _invisibleCanvas.getHeight());
+    }
+
+    private void clearInvisibleCanvas() {
+        _invisibleGraphicsContext.clearRect(0, 0, _invisibleCanvas.getWidth(), _invisibleCanvas.getHeight());
+        fillDefaultColor();
     }
 
     public void onMousePressed(MouseEvent mouseEvent) {
