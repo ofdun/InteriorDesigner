@@ -4,20 +4,26 @@ import com.ofdun.interiordesigner.managers.Transformer;
 import javafx.geometry.Point3D;
 import org.ejml.simple.SimpleMatrix;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Mesh {
     public static final int MOVE_STEP = 5;
     public static final double ROTATION_STEP = Math.toRadians(1);
     private final List<Point3D> _vertices;
+    private final List<Point3D> _normals;
     private final List<List<Integer>> _faces;
+    private final List<List<Integer>> _normalIndices;
     private final String _id;
     private Point3D _center;
     private SimpleMatrix _transformState;
 
-    public Mesh(List<Point3D> vertices, List<List<Integer>> faces, String id) {
+    public Mesh(List<Point3D> vertices, List<Point3D> normals, List<List<Integer>> faces,
+                List<List<Integer>> normalIndices, String id) {
         _vertices = vertices;
+        _normals = normals;
         _faces = faces;
+        _normalIndices = normalIndices;
         _id = id;
         _transformState = SimpleMatrix.identity(4);
 
@@ -28,8 +34,16 @@ public class Mesh {
         return transformedVertices();
     }
 
+    public List<Point3D> getNormals() {
+        return transformedNormals();
+    }
+
     public List<List<Integer>> getFaces() {
         return _faces;
+    }
+
+    public List<List<Integer>> getNormalIndices() {
+        return _normalIndices;
     }
 
     public String getId() {
@@ -53,7 +67,7 @@ public class Mesh {
         _center = new Point3D(x / _vertices.size(),y / _vertices.size(),z / _vertices.size());
     }
 
-    private Point3D getCenter() {
+    public Point3D getCenter() {
         return Transformer.transformPoint(_center, _transformState);
     }
 
@@ -78,6 +92,39 @@ public class Mesh {
         return _vertices.stream()
                 .map(v ->  Transformer.transformPoint(v, _transformState))
                 .toList();
+    }
+
+    private List<Point3D> transformedNormals() {
+        if (_normals.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        SimpleMatrix rotationMatrix = Transformer.extractRotation(_transformState);
+
+        return _normals.stream()
+                .map(n -> Transformer.transformPoint(n, rotationMatrix))
+                .toList();
+    }
+
+    public Point3D[] getBounds() {
+        if (_vertices.isEmpty()) {
+            return new Point3D[]{new Point3D(0, 0, 0), new Point3D(0, 0, 0)};
+        }
+
+        List<Point3D> transformedVertices = getVertices();
+        double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
+
+        for (Point3D vertex : transformedVertices) {
+            minX = Math.min(minX, vertex.getX());
+            minY = Math.min(minY, vertex.getY());
+            minZ = Math.min(minZ, vertex.getZ());
+            maxX = Math.max(maxX, vertex.getX());
+            maxY = Math.max(maxY, vertex.getY());
+            maxZ = Math.max(maxZ, vertex.getZ());
+        }
+
+        return new Point3D[]{new Point3D(minX, minY, minZ), new Point3D(maxX, maxY, maxZ)};
     }
 
     @Override

@@ -6,42 +6,42 @@
 
 <VBox alignment="CENTER" prefHeight="582.0" prefWidth="120.0" spacing="5.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ofdun.interiordesigner.controllers.ControlsController">
 <!--    <Button mnemonicParsing="false" onAction="#onRenderButtonPressed" text="Render" />-->
-    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Camera" />
-    <HBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">
-        <VBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="X" />
-            <Button mnemonicParsing="false" onAction="#onCameraXPlusButtonPressed" text="+" />
-            <Button mnemonicParsing="false" onAction="#onCameraXMinusButtonPressed" text="-" />
-        </VBox>
-        <VBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Y" />
-            <Button mnemonicParsing="false" onAction="#onCameraYPlusButtonPressed" text="+" />
-            <Button mnemonicParsing="false" onAction="#onCameraYMinusButtonPressed" text="-" />
-        </VBox>
-        <VBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Z" />
-            <Button mnemonicParsing="false" onAction="#onCameraZPlusButtonPressed" text="+" />
-            <Button mnemonicParsing="false" onAction="#onCameraZMinusButtonPressed" text="-" />
-        </VBox>
-    </HBox>
-    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Camera rotation" />
-    <HBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">
-        <VBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="X" />
-            <Button mnemonicParsing="false" onAction="#onCameraXAnglePlusButtonPressed" text="+" />
-            <Button mnemonicParsing="false" onAction="#onCameraXAngleMinusButtonPressed" text="-" />
-        </VBox>
-        <VBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Y" />
-            <Button mnemonicParsing="false" onAction="#onCameraYAnglePlusButtonPressed" text="+" />
-            <Button mnemonicParsing="false" onAction="#onCameraYAngleMinusButtonPressed" text="-" />
-        </VBox>
-        <VBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Z" />
-            <Button mnemonicParsing="false" onAction="#onCameraZAnglePlusButtonPressed" text="+" />
-            <Button mnemonicParsing="false" onAction="#onCameraZAngleMinusButtonPressed" text="-" />
-        </VBox>
-    </HBox>
+<!--    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Camera" />-->
+<!--    <HBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">-->
+<!--        <VBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">-->
+<!--            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="X" />-->
+<!--            <Button mnemonicParsing="false" onAction="#onCameraXPlusButtonPressed" text="+" />-->
+<!--            <Button mnemonicParsing="false" onAction="#onCameraXMinusButtonPressed" text="-" />-->
+<!--        </VBox>-->
+<!--        <VBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">-->
+<!--            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Y" />-->
+<!--            <Button mnemonicParsing="false" onAction="#onCameraYPlusButtonPressed" text="+" />-->
+<!--            <Button mnemonicParsing="false" onAction="#onCameraYMinusButtonPressed" text="-" />-->
+<!--        </VBox>-->
+<!--        <VBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">-->
+<!--            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Z" />-->
+<!--            <Button mnemonicParsing="false" onAction="#onCameraZPlusButtonPressed" text="+" />-->
+<!--            <Button mnemonicParsing="false" onAction="#onCameraZMinusButtonPressed" text="-" />-->
+<!--        </VBox>-->
+<!--    </HBox>-->
+<!--    <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Camera rotation" />-->
+<!--    <HBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">-->
+<!--        <VBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">-->
+<!--            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="X" />-->
+<!--            <Button mnemonicParsing="false" onAction="#onCameraXAnglePlusButtonPressed" text="+" />-->
+<!--            <Button mnemonicParsing="false" onAction="#onCameraXAngleMinusButtonPressed" text="-" />-->
+<!--        </VBox>-->
+<!--        <VBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">-->
+<!--            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Y" />-->
+<!--            <Button mnemonicParsing="false" onAction="#onCameraYAnglePlusButtonPressed" text="+" />-->
+<!--            <Button mnemonicParsing="false" onAction="#onCameraYAngleMinusButtonPressed" text="-" />-->
+<!--        </VBox>-->
+<!--        <VBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">-->
+<!--            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Z" />-->
+<!--            <Button mnemonicParsing="false" onAction="#onCameraZAnglePlusButtonPressed" text="+" />-->
+<!--            <Button mnemonicParsing="false" onAction="#onCameraZAngleMinusButtonPressed" text="-" />-->
+<!--        </VBox>-->
+<!--    </HBox>-->
    <ListView fx:id="_objectsListView" prefHeight="79.0" prefWidth="106.0" />
     <HBox alignment="CENTER" prefHeight="102.0" prefWidth="106.0" spacing="5.0">
        <Button fx:id="_objectAddButton" mnemonicParsing="false" onAction="#onObjectAddButton" text="Add" />

@@ -9,4 +9,6 @@ public interface IObjectReader {
     void setReader(BufferedReader reader);
     List<Point3D> readAllVertices();
     List<List<Integer>> readAllFaces();
+    List<Point3D> readAllNormals();
+    List<List<Integer>> readAllNormalIndices();
 }
