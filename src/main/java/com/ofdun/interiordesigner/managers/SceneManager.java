@@ -2,7 +2,9 @@ package com.ofdun.interiordesigner.managers;
 
 import com.ofdun.interiordesigner.controllers.CanvasController;
 import com.ofdun.interiordesigner.controllers.ControlsController;
+import com.ofdun.interiordesigner.models.Camera;
 import com.ofdun.interiordesigner.models.Mesh;
+import com.ofdun.interiordesigner.models.Projecter;
 import com.ofdun.interiordesigner.objectloaders.ObjectLoader;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -21,7 +23,7 @@ import java.util.Map;
 @Singleton
 public class SceneManager {
     private final Map<String, Mesh> _objects = new HashMap<>();
-    private final Camera _camera = new Camera();
+    private final Camera _camera = new Camera(this);
     private final Projecter _projecter = new Projecter(_camera, 1000, 800);
     private final CanvasController _canvasController;
     private final ControlsController _controlsController;
@@ -29,25 +31,22 @@ public class SceneManager {
     private static final Logger log = LoggerFactory.getLogger(SceneManager.class);
 
     @Inject
-    SceneManager(CanvasController canvasController, ControlsController controlsController, ObjectLoader objectLoader) {
+    SceneManager(CanvasController canvasController, ControlsController controlsController,
+                 ObjectLoader objectLoader) {
         _canvasController = canvasController;
         _controlsController = controlsController;
         _objectLoader = objectLoader;
 
-        bindEvents();
+        bindCanvasEvents();
+        bindControlsEvents();
     }
 
-    private void transformSelectedMeshes(SimpleMatrix transform) {
-        for (String selectedMeshId : _controlsController.getHighlightedListView()) {
-            var mesh = _objects.get(selectedMeshId);
-//            log.info(mesh.getCenter().toString());
-            if (mesh != null) {
-                mesh.applyTransform(transform);
-            }
-        }
+    private void bindCanvasEvents() {
+        _canvasController.bindMouseEventCallback("cameraOrbit", _camera::orbit);
+        _canvasController.bindEventCallback("render", this::renderAllMeshes);
     }
 
-    private void bindEvents() {
+    private void bindControlsEvents() {
         _controlsController.bindButtonEvent("render", this::renderAllMeshes);
         _controlsController.bindButtonEvent("objectAdd", () -> {
             FileChooser fileChooser = new FileChooser();
@@ -77,263 +76,52 @@ public class SceneManager {
             }
         });
 
-        _controlsController.bindButtonEvent("cameraXPlus", () ->
-                _camera.transform(new SimpleMatrix(new double[][] {
-                        {1, 0, 0, 0},
-                        {0, 1, 0, 0},
-                        {0, 0, 1, 0},
-                        {Camera.MOVE_STEP, 0, 0, 1}
-                }))
-        );
-
-        _controlsController.bindButtonEvent("cameraXMinus", () ->
-                _camera.transform(new SimpleMatrix(new double[][] {
-                        {1, 0, 0, 0},
-                        {0, 1, 0, 0},
-                        {0, 0, 1, 0},
-                        {-Camera.MOVE_STEP, 0, 0, 1}
-                }))
-        );
-
-        _controlsController.bindButtonEvent("cameraYPlus", () ->
-                _camera.transform(new SimpleMatrix(new double[][] {
-                        {1, 0, 0, 0},
-                        {0, 1, 0, 0},
-                        {0, 0, 1, 0},
-                        {0, Camera.MOVE_STEP, 0, 1}
-                }))
-        );
-
-        _controlsController.bindButtonEvent("cameraYMinus", () ->
-                _camera.transform(new SimpleMatrix(new double[][] {
-                        {1, 0, 0, 0},
-                        {0, 1, 0, 0},
-                        {0, 0, 1, 0},
-                        {0, -Camera.MOVE_STEP, 0, 1}
-                }))
-        );
-
-        _controlsController.bindButtonEvent("cameraZPlus", () ->
-                _camera.transform(new SimpleMatrix(new double[][] {
-                        {1, 0, 0, 0},
-                        {0, 1, 0, 0},
-                        {0, 0, 1, 0},
-                        {0, 0, Camera.MOVE_STEP, 1}
-                }))
-        );
-
-        _controlsController.bindButtonEvent("cameraZMinus", () ->
-                _camera.transform(new SimpleMatrix(new double[][] {
-                        {1, 0, 0, 0},
-                        {0, 1, 0, 0},
-                        {0, 0, 1, 0},
-                        {0, 0, -Camera.MOVE_STEP, 1}
-                }))
-        );
-
-        _controlsController.bindButtonEvent("cameraXAnglePlus", () -> {
-            double cos = Math.cos(Camera.ROTATION_STEP);
-            double sin = Math.sin(Camera.ROTATION_STEP);
-
-            _camera.transform(new SimpleMatrix(new double[][]{
-                    {1,   0,    0, 0},
-                    {0, cos, -sin, 0},
-                    {0, sin,  cos, 0},
-                    {0,   0,    0, 1}
-            }));
-        });
-
-        _controlsController.bindButtonEvent("cameraXAngleMinus", () -> {
-            double cos = Math.cos(-Camera.ROTATION_STEP);
-            double sin = Math.sin(-Camera.ROTATION_STEP);
-
-            _camera.transform(new SimpleMatrix(new double[][]{
-                    {1,   0,    0, 0},
-                    {0, cos, -sin, 0},
-                    {0, sin,  cos, 0},
-                    {0,   0,    0, 1}
-            }));
-        });
-
-        _controlsController.bindButtonEvent("cameraYAnglePlus", () -> {
-            double cos = Math.cos(Camera.ROTATION_STEP);
-            double sin = Math.sin(Camera.ROTATION_STEP);
-
-            _camera.transform(new SimpleMatrix(new double[][]{
-                    { cos, 0, sin, 0},
-                    {   0, 1,   0, 0},
-                    {-sin, 0, cos, 0},
-                    {   0, 0,   0, 1}
-            }));
-        });
-
-        _controlsController.bindButtonEvent("cameraYAngleMinus", () -> {
-            double cos = Math.cos(-Camera.ROTATION_STEP);
-            double sin = Math.sin(-Camera.ROTATION_STEP);
-
-            _camera.transform(new SimpleMatrix(new double[][]{
-                    { cos, 0, sin, 0},
-                    {   0, 1,   0, 0},
-                    {-sin, 0, cos, 0},
-                    {   0, 0,   0, 1}
-            }));
-        });
-
-        _controlsController.bindButtonEvent("cameraZAnglePlus", () -> {
-            double cos = Math.cos(Camera.ROTATION_STEP);
-            double sin = Math.sin(Camera.ROTATION_STEP);
-
-            _camera.transform(new SimpleMatrix(new double[][]{
-                    {cos, -sin, 0, 0},
-                    {sin,  cos, 0, 0},
-                    {  0,    0, 1, 0},
-                    {  0,    0, 0, 1}
-            }));
-        });
-
-        _controlsController.bindButtonEvent("cameraZAngleMinus", () -> {
-            double cos = Math.cos(-Camera.ROTATION_STEP);
-            double sin = Math.sin(-Camera.ROTATION_STEP);
-
-            _camera.transform(new SimpleMatrix(new double[][]{
-                    {cos, -sin, 0, 0},
-                    {sin,  cos, 0, 0},
-                    {  0,    0, 1, 0},
-                    {  0,    0, 0, 1}
-            }));
-        });
-
         _controlsController.bindButtonEvent("objectXPlus", () ->
-                transformSelectedMeshes(new SimpleMatrix(new double[][] {
-                        {1, 0, 0, 0},
-                        {0, 1, 0, 0},
-                        {0, 0, 1, 0},
-                        {Mesh.MOVE_STEP, 0, 0, 1}
-                }))
-        );
-
+                transformSelectedMeshes(TransformMatrices.translateX(Mesh.MOVE_STEP)));
         _controlsController.bindButtonEvent("objectXMinus", () ->
-                transformSelectedMeshes(new SimpleMatrix(new double[][] {
-                        {1, 0, 0, 0},
-                        {0, 1, 0, 0},
-                        {0, 0, 1, 0},
-                        {-Mesh.MOVE_STEP, 0, 0, 1}
-                }))
-        );
-
+                transformSelectedMeshes(TransformMatrices.translateX(-Mesh.MOVE_STEP)));
         _controlsController.bindButtonEvent("objectYPlus", () ->
-                transformSelectedMeshes(new SimpleMatrix(new double[][] {
-                        {1, 0, 0, 0},
-                        {0, 1, 0, 0},
-                        {0, 0, 1, 0},
-                        {0, Mesh.MOVE_STEP, 0, 1}
-                }))
-        );
-
+                transformSelectedMeshes(TransformMatrices.translateY(Mesh.MOVE_STEP)));
         _controlsController.bindButtonEvent("objectYMinus", () ->
-                transformSelectedMeshes(new SimpleMatrix(new double[][] {
-                        {1, 0, 0, 0},
-                        {0, 1, 0, 0},
-                        {0, 0, 1, 0},
-                        {0, -Mesh.MOVE_STEP, 0, 1}
-                }))
-        );
-
+                transformSelectedMeshes(TransformMatrices.translateY(-Mesh.MOVE_STEP)));
         _controlsController.bindButtonEvent("objectZPlus", () ->
-                transformSelectedMeshes(new SimpleMatrix(new double[][] {
-                        {1, 0, 0, 0},
-                        {0, 1, 0, 0},
-                        {0, 0, 1, 0},
-                        {0, 0, Mesh.MOVE_STEP, 1}
-                }))
-        );
-
+                transformSelectedMeshes(TransformMatrices.translateZ(Mesh.MOVE_STEP)));
         _controlsController.bindButtonEvent("objectZMinus", () ->
-                transformSelectedMeshes(new SimpleMatrix(new double[][] {
-                        {1, 0, 0, 0},
-                        {0, 1, 0, 0},
-                        {0, 0, 1, 0},
-                        {0, 0, -Mesh.MOVE_STEP, 1}
-                }))
-        );
+                transformSelectedMeshes(TransformMatrices.translateZ(-Mesh.MOVE_STEP)));
 
-        _controlsController.bindButtonEvent("objectXAnglePlus", () -> {
-            double cos = Math.cos(Mesh.ROTATION_STEP);
-            double sin = Math.sin(Mesh.ROTATION_STEP);
+        _controlsController.bindButtonEvent("objectXAnglePlus", () ->
+                transformSelectedMeshes(TransformMatrices.rotateX(Mesh.ROTATION_STEP)));
+        _controlsController.bindButtonEvent("objectXAngleMinus", () ->
+                transformSelectedMeshes(TransformMatrices.rotateX(-Mesh.ROTATION_STEP)));
+        _controlsController.bindButtonEvent("objectYAnglePlus", () ->
+                transformSelectedMeshes(TransformMatrices.rotateY(Mesh.ROTATION_STEP)));
+        _controlsController.bindButtonEvent("objectYAngleMinus", () ->
+                transformSelectedMeshes(TransformMatrices.rotateY(-Mesh.ROTATION_STEP)));
+        _controlsController.bindButtonEvent("objectZAnglePlus", () ->
+                transformSelectedMeshes(TransformMatrices.rotateZ(Mesh.ROTATION_STEP)));
+        _controlsController.bindButtonEvent("objectZAngleMinus", () ->
+                transformSelectedMeshes(TransformMatrices.rotateZ(-Mesh.ROTATION_STEP)));
+    }
 
-            transformSelectedMeshes(new SimpleMatrix(new double[][] {
-                    {1,   0,    0, 0},
-                    {0, cos, -sin, 0},
-                    {0, sin,  cos, 0},
-                    {0,   0,    0, 1}
-            }));
-        });
-
-        _controlsController.bindButtonEvent("objectXAngleMinus", () -> {
-            double cos = Math.cos(-Mesh.ROTATION_STEP);
-            double sin = Math.sin(-Mesh.ROTATION_STEP);
-
-            transformSelectedMeshes(new SimpleMatrix(new double[][] {
-                    {1,   0,    0, 0},
-                    {0, cos, -sin, 0},
-                    {0, sin,  cos, 0},
-                    {0,   0,    0, 1}
-            }));
-        });
-
-        _controlsController.bindButtonEvent("objectYAnglePlus", () -> {
-            double cos = Math.cos(Mesh.ROTATION_STEP);
-            double sin = Math.sin(Mesh.ROTATION_STEP);
-
-            transformSelectedMeshes(new SimpleMatrix(new double[][] {
-                    { cos, 0, sin, 0},
-                    {   0, 1,   0, 0},
-                    {-sin, 0, cos, 0},
-                    {   0, 0,   0, 1}
-            }));
-        });
-
-        _controlsController.bindButtonEvent("objectYAngleMinus", () -> {
-            double cos = Math.cos(-Mesh.ROTATION_STEP);
-            double sin = Math.sin(-Mesh.ROTATION_STEP);
-
-            transformSelectedMeshes(new SimpleMatrix(new double[][] {
-                    { cos, 0, sin, 0},
-                    {   0, 1,   0, 0},
-                    {-sin, 0, cos, 0},
-                    {   0, 0,   0, 1}
-            }));
-        });
-
-        _controlsController.bindButtonEvent("objectZAnglePlus", () -> {
-            double cos = Math.cos(Mesh.ROTATION_STEP);
-            double sin = Math.sin(Mesh.ROTATION_STEP);
-
-            transformSelectedMeshes(new SimpleMatrix(new double[][] {
-                    {cos, -sin, 0, 0},
-                    {sin,  cos, 0, 0},
-                    {  0,    0, 1, 0},
-                    {  0,    0, 0, 1}
-            }));
-        });
-
-        _controlsController.bindButtonEvent("objectZAngleMinus", () -> {
-            double cos = Math.cos(-Mesh.ROTATION_STEP);
-            double sin = Math.sin(-Mesh.ROTATION_STEP);
-
-            transformSelectedMeshes(new SimpleMatrix(new double[][] {
-                    {cos, -sin, 0, 0},
-                    {sin,  cos, 0, 0},
-                    {  0,    0, 1, 0},
-                    {  0,    0, 0, 1}
-            }));
-        });
-
+    private void transformSelectedMeshes(SimpleMatrix transform) {
+        for (String selectedMeshId : _controlsController.getHighlightedListView()) {
+            var mesh = _objects.get(selectedMeshId);
+//            log.info(mesh.getCenter().toString());
+            if (mesh != null) {
+                mesh.applyTransform(transform);
+            }
+        }
     }
 
     public void addMeshView(Mesh meshView) {
-        _objects.put(meshView.getId(), meshView);
-        _controlsController.addObjectToObjectListView(meshView.getId());
+        var id = meshView.getId();
+        _objects.put(id, meshView);
+
+        if (id.equals("0")) {
+            _camera.resetToRoom();
+        } else {
+            _controlsController.addObjectToObjectListView(id);
+        }
     }
 
     public Boolean removeMashById(String id) {
@@ -345,26 +133,88 @@ public class SceneManager {
         return res != null;
     }
 
+    public Mesh getMeshById(String id) {
+        return _objects.get(id);
+    }
+
     public void renderAllMeshes() {
-        for (Mesh mesh : _objects.values()) {
-//            log.info("rendering {}", mesh.id());
+        List<Mesh> sortedMeshes = _objects.values().stream()
+                .sorted((m1, m2) -> {
+                    double dist1 = m1.getCenter().distance(_camera.getPosition());
+                    double dist2 = m2.getCenter().distance(_camera.getPosition());
+                    return Double.compare(dist2, dist1);
+                })
+                .toList();
+
+        for (Mesh mesh : sortedMeshes) {
             var vertices = mesh.getVertices();
-            var faces =  mesh.getFaces();
+            var normals = mesh.getNormals();
+            var faces = mesh.getFaces();
+            var normalIndices = mesh.getNormalIndices();
             var projectedPoints = projectAllPoints(vertices);
 
-            renderFaces(faces, projectedPoints);
+            renderFaces(faces, normalIndices, projectedPoints, normals, mesh.getId().equals("0"));
         }
 
         _canvasController.render();
     }
 
-    private void renderFaces(List<List<Integer>> faces, List<Point3D> points) {
-        for (List<Integer> face : faces) {
-            for (int i = 0; i < face.size(); i++) {
-                _canvasController.drawLine(
-                        points.get(face.get(i)), points.get(face.get((i + 1) % face.size()))
-                );
+    private void renderFaces(List<List<Integer>> faces, List<List<Integer>> normalIndices,
+                           List<Point3D> projectedPoints, List<Point3D> normals, Boolean insideView) {
+        for (int faceIndex = 0; faceIndex < faces.size(); faceIndex++) {
+            List<Integer> face = faces.get(faceIndex);
+
+            if (face.size() >= 3) {
+                Point3D p1 = projectedPoints.get(face.get(0));
+                Point3D p2 = projectedPoints.get(face.get(1));
+                Point3D p3 = projectedPoints.get(face.get(2));
+
+                boolean shouldRender = shouldRenderTriangleWithNormals(
+                        faceIndex, normalIndices, normals, insideView);
+
+                if (shouldRender) {
+                    if (face.size() == 3) {
+                        _canvasController.drawTriangle(p1, p2, p3, insideView);
+                    } else {
+                        Point3D tp1 = projectedPoints.get(face.get(0));
+                        for (int i = 1; i < face.size() - 1; i++) {
+                            Point3D tp2 = projectedPoints.get(face.get(i));
+                            Point3D tp3 = projectedPoints.get(face.get(i + 1));
+                            _canvasController.drawTriangle(tp1, tp2, tp3, insideView);
+                        }
+                    }
+                }
             }
+        }
+    }
+
+    private boolean shouldRenderTriangleWithNormals(int faceIndex,
+                                                   List<List<Integer>> normalIndices,
+                                                   List<Point3D> normals, Boolean insideView) {
+        if (normals.isEmpty() || normalIndices.isEmpty() || faceIndex >= normalIndices.size()) {
+            return true;
+        }
+
+        List<Integer> faceNormalIndices = normalIndices.get(faceIndex);
+        if (faceNormalIndices.isEmpty() || faceNormalIndices.get(0) == -1) {
+            return true;
+        }
+
+        int normalIndex = faceNormalIndices.get(0);
+        if (normalIndex >= normals.size()) {
+            return true;
+        }
+
+        Point3D faceNormal = normals.get(normalIndex);
+
+        Point3D cameraDir = _camera.getDir();
+
+        double dotProduct = faceNormal.dotProduct(cameraDir);
+
+        if (insideView) {
+            return dotProduct > 0;
+        } else {
+            return dotProduct < 0;
         }
     }
 
@@ -372,95 +222,8 @@ public class SceneManager {
         List<Point3D> projectedPoints = new ArrayList<>();
         for (Point3D point : points) {
             var projectedPoint = _projecter.project(point);
-//            log.info("projectedPoint {} {}", projectedPoint.getX(), projectedPoint.getY());
             projectedPoints.add(projectedPoint);
         }
         return projectedPoints;
-    }
-}
-
-class Camera {
-    static final int MOVE_STEP = 10;
-    static final double ROTATION_STEP = Math.toRadians(1);
-
-    private Point3D position;
-    private Point3D up;
-    private Point3D dir;
-    private Point3D right;
-
-    public Camera() {
-        this.position = new Point3D(30,-100, 50);
-        this.up = new Point3D(0,0, 1);
-        this.dir = new Point3D(0,1, 0);
-        this.right = new Point3D(1,0, 0);
-    }
-
-    public Point3D getPosition() {
-        return position;
-    }
-
-    public Point3D getUp() {
-        return up;
-    }
-
-    public Point3D getDir() {
-        return dir;
-    }
-
-    public Point3D getRight() {
-        return right;
-    }
-
-    public void transform(SimpleMatrix transformationMatrix) {
-        var decomposed = Transformer.decomposeMatrix(transformationMatrix);
-
-        position = Transformer.transformPoint(position, decomposed[0]);
-        right = Transformer.transformPoint(right, decomposed[1]);
-        up = Transformer.transformPoint(up, decomposed[1]);
-        dir = Transformer.transformPoint(dir, decomposed[1]);
-    }
-
-    @Override
-    public String toString() {
-        return "Camera{" +
-                "position=" + position +
-                ", up=" + up +
-                ", dir=" + dir +
-                ", right=" + right +
-                '}';
-    }
-}
-
-class Projecter {
-    Camera _camera;
-    Integer _width;
-    Integer _height;
-
-    Projecter(Camera camera, Integer width, Integer height) {
-        _camera = camera;
-        _width = width;
-        _height = height;
-    }
-
-    public Point3D project(Point3D point) {
-        var relative = new Point3D(
-                point.getX() - _camera.getPosition().getX(),
-                point.getY() - _camera.getPosition().getY(),
-                point.getZ() - _camera.getPosition().getZ()
-        );
-
-        var xCam = relative.dotProduct(_camera.getRight());
-        var yCam = relative.dotProduct(_camera.getUp());
-        var zCam = relative.dotProduct(_camera.getDir());
-
-        zCam = Math.max(zCam, 1e-6);
-
-        double x = xCam / zCam;
-        double y = yCam / zCam;
-
-        double screenX = (x + 1) * _width / 2;
-        double screenY = (1 - y) * _height / 2;
-
-        return new Point3D(screenX, screenY, zCam);
     }
 }

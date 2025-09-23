@@ -17,7 +17,7 @@ import java.util.Map;
 @Singleton
 public class ControlsController {
     private final Map<String, Runnable> buttonEvents = new HashMap<>();
-    private static final Logger log = LoggerFactory.getLogger(ControlsController.class);
+    private static final Logger _log = LoggerFactory.getLogger(ControlsController.class);
 
     @FXML
     private ListView<String> _objectsListView;

@@ -31,14 +31,18 @@ public class ObjectLoader {
         _objectReader.setReader(buffer);
         _objectReader.readAllVertices();
         _objectReader.readAllFaces();
+        _objectReader.readAllNormals();
+        _objectReader.readAllNormalIndices();
     }
 
     private Mesh buildMesh() {
         var vertices = _objectReader.readAllVertices();
         var faces = _objectReader.readAllFaces();
+        var normals = _objectReader.readAllNormals();
+        var normalIndices = _objectReader.readAllNormalIndices();
 
         return new Mesh(
-                vertices, faces, Integer.toString(_id)
+                vertices, normals, faces, normalIndices, Integer.toString(_id)
         );
     }
 }
