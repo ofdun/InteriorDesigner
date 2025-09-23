@@ -14,12 +14,15 @@ import javafx.scene.paint.Color;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
 @Singleton
 public class CanvasController {
+    private static final double EPSILON = 1e-6;
+
     private final Logger log = LoggerFactory.getLogger(CanvasController.class);
     private final Map<String, Runnable> eventCallbacks = new HashMap<>();
     private final Map<String, BiConsumer<Double, Double>> mouseEventCallbacks = new HashMap<>();
@@ -126,9 +129,11 @@ public class CanvasController {
     }
 
     public void drawTriangle(Point3D p1, Point3D p2, Point3D p3, Boolean insideView) {
-        if (p1.getY() > p2.getY()) { Point3D temp = p1; p1 = p2; p2 = temp; }
-        if (p2.getY() > p3.getY()) { Point3D temp = p2; p2 = p3; p3 = temp; }
-        if (p1.getY() > p2.getY()) { Point3D temp = p1; p1 = p2; p2 = temp; }
+        Point3D[] points = new Point3D[]{p1, p2, p3};
+        Arrays.sort(points, java.util.Comparator.comparingDouble(Point3D::getY));
+        p1 = points[0];
+        p2 = points[1];
+        p3 = points[2];
 
         int y1 = (int) Math.round(p1.getY());
         int y2 = (int) Math.round(p2.getY());
@@ -137,7 +142,7 @@ public class CanvasController {
         double denom = (p2.getY() - p3.getY()) * (p1.getX() - p3.getX()) +
                 (p3.getX() - p2.getX()) * (p1.getY() - p3.getY());
 
-        if (Math.abs(denom) < 1e-6)
+        if (Math.abs(denom) < EPSILON)
             return;
 
         for (int y = y1; y <= y2; y++) {
@@ -147,10 +152,6 @@ public class CanvasController {
         for (int y = y2 + 1; y <= y3; y++) {
             fillTriangleLine(p2, p3, p1, p3, y, p1, p2, p3, denom);
         }
-    }
-
-    public void drawTriangle(Point3D p1, Point3D p2, Point3D p3) {
-        drawTriangle(p1, p2, p3, false);
     }
 
     private void fillTriangleLine(Point3D p1, Point3D p2, Point3D p3, Point3D p4, int y,

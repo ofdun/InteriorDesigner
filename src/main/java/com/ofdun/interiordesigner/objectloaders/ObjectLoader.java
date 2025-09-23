@@ -39,10 +39,10 @@ public class ObjectLoader {
         var vertices = _objectReader.readAllVertices();
         var faces = _objectReader.readAllFaces();
         var normals = _objectReader.readAllNormals();
-        var normalIndecies = _objectReader.readAllNormalIndices();
+        var normalIndices = _objectReader.readAllNormalIndices();
 
         return new Mesh(
-                vertices, normals, faces, normalIndecies, Integer.toString(_id)
+                vertices, normals, faces, normalIndices, Integer.toString(_id)
         );
     }
 }
