@@ -44,7 +44,7 @@ public class ObjectLoader {
         var normalIndices = _objectReader.readAllNormalIndices();
 
         return new Mesh(
-                vertices, normals, faces, normalIndices, Integer.toString(_id), Color.DARKGRAY
+                vertices, normals, faces, normalIndices, Integer.toString(_id), Color.GRAY
         );
     }
 }

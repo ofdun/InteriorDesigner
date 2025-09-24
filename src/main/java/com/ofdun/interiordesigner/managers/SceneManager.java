@@ -31,7 +31,6 @@ public class SceneManager {
     private final ControlsController _controlsController;
     private final ObjectLoader _objectLoader;
     private static final Logger log = LoggerFactory.getLogger(SceneManager.class);
-    private final String ROOM_ID = "0";
 
     @Inject
     SceneManager(CanvasController canvasController, ControlsController controlsController,
@@ -117,13 +116,12 @@ public class SceneManager {
     }
 
     public void addMeshView(Mesh meshView) {
-        var id = meshView.getId();
-        _objects.put(id, meshView);
+        _objects.put(meshView.getId(), meshView);
 
-        if (id.equals(ROOM_ID)) {
+        if (meshView.isRoom()) {
             _camera.resetToRoom();
         } else {
-            _controlsController.addObjectToObjectListView(id);
+            _controlsController.addObjectToObjectListView(meshView.getId());
         }
     }
 
@@ -155,13 +153,9 @@ public class SceneManager {
             var faces = mesh.getFaces();
             var normalIndices = mesh.getNormalIndices();
             var projectedPoints = projectAllPoints(vertices);
-
             var color = mesh.getColor();
-            if (mesh.getId().equals(ROOM_ID)) {
-                color = Color.GRAY;
-            }
 
-            renderFaces(faces, normalIndices, projectedPoints, normals, mesh.getId().equals(ROOM_ID), color);
+            renderFaces(faces, normalIndices, projectedPoints, normals, mesh.isRoom(), color);
         }
 
         _canvasController.render();

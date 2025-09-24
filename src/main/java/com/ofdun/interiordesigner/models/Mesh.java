@@ -2,6 +2,7 @@ package com.ofdun.interiordesigner.models;
 
 import com.ofdun.interiordesigner.managers.Transformer;
 import javafx.geometry.Point3D;
+import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import org.ejml.simple.SimpleMatrix;
 
@@ -19,6 +20,7 @@ public class Mesh {
     private final Paint _color;
     private Point3D _center;
     private SimpleMatrix _transformState;
+    private final String ROOM_ID = "0";
 
     public Mesh(List<Point3D> vertices, List<Point3D> normals, List<List<Integer>> faces,
                 List<List<Integer>> normalIndices, String id, Paint color) {
@@ -28,9 +30,18 @@ public class Mesh {
         _normalIndices = normalIndices;
         _id = id;
         _transformState = SimpleMatrix.identity(4);
-        _color = color;
+
+        if (_id.equals(ROOM_ID)) {
+            _color = Color.DARKGRAY;
+        } else {
+            _color = color;
+        }
 
         calcCenter();
+    }
+
+    public Boolean isRoom() {
+        return _id.equals(ROOM_ID);
     }
 
     public List<Point3D> getVertices() {
