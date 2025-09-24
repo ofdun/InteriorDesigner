@@ -9,6 +9,8 @@ import com.ofdun.interiordesigner.objectloaders.ObjectLoader;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import javafx.geometry.Point3D;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.stage.FileChooser;
 import org.ejml.simple.SimpleMatrix;
 import org.slf4j.Logger;
@@ -153,14 +155,19 @@ public class SceneManager {
             var normalIndices = mesh.getNormalIndices();
             var projectedPoints = projectAllPoints(vertices);
 
-            renderFaces(faces, normalIndices, projectedPoints, normals, mesh.getId().equals("0"));
+            var color = mesh.getColor();
+            if (mesh.getId().equals("0")) {
+                color = Color.GRAY;
+            }
+
+            renderFaces(faces, normalIndices, projectedPoints, normals, mesh.getId().equals("0"), color);
         }
 
         _canvasController.render();
     }
 
     private void renderFaces(List<List<Integer>> faces, List<List<Integer>> normalIndices,
-                           List<Point3D> projectedPoints, List<Point3D> normals, Boolean insideView) {
+                           List<Point3D> projectedPoints, List<Point3D> normals, Boolean insideView, Paint paint) {
         for (int faceIndex = 0; faceIndex < faces.size(); faceIndex++) {
             List<Integer> face = faces.get(faceIndex);
 
@@ -174,13 +181,13 @@ public class SceneManager {
 
                 if (shouldRender) {
                     if (face.size() == 3) {
-                        _canvasController.drawTriangle(p1, p2, p3, insideView);
+                        _canvasController.drawTriangle(p1, p2, p3, paint);
                     } else {
                         Point3D tp1 = projectedPoints.get(face.get(0));
                         for (int i = 1; i < face.size() - 1; i++) {
                             Point3D tp2 = projectedPoints.get(face.get(i));
                             Point3D tp3 = projectedPoints.get(face.get(i + 1));
-                            _canvasController.drawTriangle(tp1, tp2, tp3, insideView);
+                            _canvasController.drawTriangle(tp1, tp2, tp3, paint);
                         }
                     }
                 }

@@ -4,6 +4,8 @@ import com.ofdun.interiordesigner.models.Mesh;
 import com.ofdun.interiordesigner.objectreaders.IObjectReader;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import org.ejml.simple.SimpleMatrix;
 
 import java.io.BufferedReader;
@@ -42,7 +44,7 @@ public class ObjectLoader {
         var normalIndices = _objectReader.readAllNormalIndices();
 
         return new Mesh(
-                vertices, normals, faces, normalIndices, Integer.toString(_id)
+                vertices, normals, faces, normalIndices, Integer.toString(_id), Color.DARKGRAY
         );
     }
 }

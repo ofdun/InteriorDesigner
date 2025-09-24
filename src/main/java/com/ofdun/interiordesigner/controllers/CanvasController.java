@@ -1,7 +1,5 @@
 package com.ofdun.interiordesigner.controllers;
 
-import com.ofdun.interiordesigner.managers.SceneManager;
-import com.ofdun.interiordesigner.models.Camera;
 import com.ofdun.interiordesigner.models.ZBuffer;
 import jakarta.inject.Singleton;
 import javafx.fxml.FXML;
@@ -11,6 +9,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,7 +127,7 @@ public class CanvasController {
         isDragging = false;
     }
 
-    public void drawTriangle(Point3D p1, Point3D p2, Point3D p3, Boolean insideView) {
+    public void drawTriangle(Point3D p1, Point3D p2, Point3D p3, Paint paint) {
         Point3D[] points = new Point3D[]{p1, p2, p3};
         Arrays.sort(points, java.util.Comparator.comparingDouble(Point3D::getY));
         p1 = points[0];
@@ -146,16 +145,16 @@ public class CanvasController {
             return;
 
         for (int y = y1; y <= y2; y++) {
-            fillTriangleLine(p1, p2, p1, p3, y, p1, p2, p3, denom);
+            fillTriangleLine(p1, p2, p1, p3, y, p1, p2, p3, denom, paint);
         }
 
         for (int y = y2 + 1; y <= y3; y++) {
-            fillTriangleLine(p2, p3, p1, p3, y, p1, p2, p3, denom);
+            fillTriangleLine(p2, p3, p1, p3, y, p1, p2, p3, denom, paint);
         }
     }
 
     private void fillTriangleLine(Point3D p1, Point3D p2, Point3D p3, Point3D p4, int y,
-                                  Point3D tp1, Point3D tp2, Point3D tp3, double denom) {
+                                  Point3D tp1, Point3D tp2, Point3D tp3, double denom, Paint paint) {
         double x1 = (p2.getY() == p1.getY()) ? p1.getX() :
                 p1.getX() + (p2.getX() - p1.getX()) * (y - p1.getY()) / (p2.getY() - p1.getY());
         double x2 = (p4.getY() == p3.getY()) ? p3.getX() :
@@ -179,13 +178,14 @@ public class CanvasController {
                 double z = w1 * tp1.getZ() + w2 * tp2.getZ() + w3 * tp3.getZ();
 
                 if (_zBuffer.testAndSet(x, y, z)) {
-                    drawPoint(new Point2D(x, y));
+                    drawPoint(new Point2D(x, y), paint);
                 }
             }
         }
     }
 
-    private void drawPoint(Point2D point) {
+    private void drawPoint(Point2D point, Paint paint) {
+        _invisibleGraphicsContext.setStroke(paint);
         _invisibleGraphicsContext.strokeLine(point.getX(), point.getY(), point.getX(),  point.getY());
     }
 }
