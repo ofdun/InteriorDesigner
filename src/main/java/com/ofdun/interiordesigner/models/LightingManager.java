@@ -28,17 +28,6 @@ public class LightingManager {
         return List.copyOf(lightSources);
     }
 
-    public Color calculateTriangleLighting(Point3D p1, Point3D p2, Point3D p3,
-                                         Point3D n1, Point3D n2, Point3D n3,
-                                         Point3D viewDirection, Color materialColor,
-                                         double w1, double w2, double w3) {
-
-        Point3D surfacePoint = interpolatePoint3D(p1, p2, p3, w1, w2, w3);
-        Point3D interpolatedNormal = interpolatePoint3D(n1, n2, n3, w1, w2, w3).normalize();
-
-        return calculateLighting(surfacePoint, interpolatedNormal, viewDirection, materialColor);
-    }
-
     public Color calculateLighting(Point3D surfacePoint, Point3D surfaceNormal,
                                   Point3D viewDirection, Color materialColor) {
         if (lightSources.isEmpty()) {
@@ -56,6 +45,14 @@ public class LightingManager {
         return clampColor(finalColor);
     }
 
+    private Color interpolateColors(Color c1, Color c2, Color c3, double w1, double w2, double w3) {
+        double red = w1 * c1.getRed() + w2 * c2.getRed() + w3 * c3.getRed();
+        double green = w1 * c1.getGreen() + w2 * c2.getGreen() + w3 * c3.getGreen();
+        double blue = w1 * c1.getBlue() + w2 * c2.getBlue() + w3 * c3.getBlue();
+
+        return clampColor(Color.color(red, green, blue));
+    }
+
     private Color addColors(Color c1, Color c2) {
         return Color.color(
                 c1.getRed() + c2.getRed(),
@@ -71,14 +68,4 @@ public class LightingManager {
                 Math.min(1.0, Math.max(0.0, color.getBlue()))
         );
     }
-
-    private Point3D interpolatePoint3D(Point3D p1, Point3D p2, Point3D p3,
-                                      double w1, double w2, double w3) {
-        return new Point3D(
-                w1 * p1.getX() + w2 * p2.getX() + w3 * p3.getX(),
-                w1 * p1.getY() + w2 * p2.getY() + w3 * p3.getY(),
-                w1 * p1.getZ() + w2 * p2.getZ() + w3 * p3.getZ()
-        );
-    }
-
 }
