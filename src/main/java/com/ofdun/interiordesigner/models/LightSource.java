@@ -7,10 +7,10 @@ public class LightSource {
     private final Point3D position;
     private final Color color;
     private final double intensity;
-    private final double ambientStrength;
-    private final double diffuseStrength;
-    private final double specularStrength;
-    private final int shininess;
+    private final double ambientStrength = 0.7;
+    private final double diffuseStrength = 1.0;
+    private final double specularStrength = 0.6;
+    private final int shininess = 32;
     private final double ATTENUATION_COEFFICIENT = 1.0;
     private final double ATTENUATION_LINEAR_COEFFICIENT = 0.01;
     private final double ATTENUATION_QUADRO_COEFFICIENT = 0.001;
@@ -19,10 +19,6 @@ public class LightSource {
         this.position = position;
         this.color = color;
         this.intensity = intensity;
-        this.ambientStrength = 0.7;
-        this.diffuseStrength = 1.0;
-        this.specularStrength = 0.6;
-        this.shininess = 32;
     }
 
     public Color calculateLighting(Point3D surfacePoint, Point3D surfaceNormal,

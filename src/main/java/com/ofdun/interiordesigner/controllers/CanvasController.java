@@ -135,6 +135,7 @@ public class CanvasController {
 
     public void drawTriangleWithLighting(TriangleLightingData triangleData) {
         TriangleData triangle = createTriangleData(triangleData);
+
         RenderingContext context = new RenderingContext(
             triangleData.viewDirection(),
             triangleData.materialColor(),
@@ -145,10 +146,20 @@ public class CanvasController {
     }
 
     private TriangleData createTriangleData(TriangleLightingData data) {
+        record VertexData(Point3D screenPoint, Point3D worldPoint, Point3D normal) {}
+
+        VertexData[] vertices = {
+            new VertexData(data.screenP1(), data.worldP1(), data.normal1()),
+            new VertexData(data.screenP2(), data.worldP2(), data.normal2()),
+            new VertexData(data.screenP3(), data.worldP3(), data.normal3())
+        };
+
+        Arrays.sort(vertices, java.util.Comparator.comparingDouble(v -> v.screenPoint.getY()));
+
         return new TriangleData(
-            sortPointsByY(data.screenP1(), data.screenP2(), data.screenP3()),
-            new Point3D[]{data.worldP1(), data.worldP2(), data.worldP3()},
-            new Point3D[]{data.normal1(), data.normal2(), data.normal3()}
+            new Point3D[]{vertices[0].screenPoint, vertices[1].screenPoint, vertices[2].screenPoint},
+            new Point3D[]{vertices[0].worldPoint, vertices[1].worldPoint, vertices[2].worldPoint},
+            new Point3D[]{vertices[0].normal, vertices[1].normal, vertices[2].normal}
         );
     }
 
@@ -201,20 +212,24 @@ public class CanvasController {
             double z = interpolateZ(screenPoints[0], screenPoints[1], screenPoints[2], coords);
 
             if (_zBuffer.testAndSet(x, y, z)) {
-                Color litColor = context.lightingManager.calculateTriangleLighting(
-                        triangle.worldPoints[0], triangle.worldPoints[1], triangle.worldPoints[2],
-                        triangle.normals[0], triangle.normals[1], triangle.normals[2],
-                        context.viewDirection, context.materialColor, coords.w1, coords.w2, coords.w3);
+                Point3D interpolatedNormal = interpolateNormals(
+                    triangle.normals[0], triangle.normals[1], triangle.normals[2],
+                    coords.w1, coords.w2, coords.w3
+                );
+
+                Point3D interpolatedWorldPos = interpolateWorldPosition(
+                    triangle.worldPoints[0], triangle.worldPoints[1], triangle.worldPoints[2],
+                    coords.w1, coords.w2, coords.w3
+                );
+
+                Color litColor = context.lightingManager.calculateLighting(
+                    interpolatedWorldPos, interpolatedNormal,
+                    context.viewDirection, context.materialColor
+                );
 
                 drawPoint(new Point2D(x, y), litColor);
             }
         }
-    }
-
-    private Point3D[] sortPointsByY(Point3D p1, Point3D p2, Point3D p3) {
-        Point3D[] points = new Point3D[]{p1, p2, p3};
-        Arrays.sort(points, java.util.Comparator.comparingDouble(Point3D::getY));
-        return points;
     }
 
     private double calculateBarycentricDenominator(Point3D p1, Point3D p2, Point3D p3) {
@@ -245,6 +260,23 @@ public class CanvasController {
         return coords.w1 * p1.getZ() + coords.w2 * p2.getZ() + coords.w3 * p3.getZ();
     }
 
+    private Point3D interpolateNormals(Point3D n1, Point3D n2, Point3D n3, double w1, double w2, double w3) {
+        Point3D interpolated = interpolatePoint3D(n1, n2, n3, w1, w2, w3);
+        return interpolated.normalize();
+    }
+
+    private Point3D interpolateWorldPosition(Point3D p1, Point3D p2, Point3D p3, double w1, double w2, double w3) {
+        return interpolatePoint3D(p1, p2, p3, w1, w2, w3);
+    }
+
+    private Point3D interpolatePoint3D(Point3D a, Point3D b, Point3D c, double w1, double w2, double w3) {
+        return new Point3D(
+            w1 * a.getX() + w2 * b.getX() + w3 * c.getX(),
+            w1 * a.getY() + w2 * b.getY() + w3 * c.getY(),
+            w1 * a.getZ() + w2 * b.getZ() + w3 * c.getZ()
+        );
+    }
+
     private record BarycentricCoordinates(double w1, double w2, double w3) {
             boolean isInsideTriangle() {
                 return w1 >= 0 && w2 >= 0 && w3 >= 0;
@@ -263,7 +295,6 @@ public class CanvasController {
         LightingManager lightingManager
     ) {}
 
-
     public record TriangleLightingData(
         Point3D screenP1, Point3D screenP2, Point3D screenP3,
         Point3D worldP1, Point3D worldP2, Point3D worldP3,
@@ -273,4 +304,3 @@ public class CanvasController {
         LightingManager lightingManager
     ) {}
 }
-
