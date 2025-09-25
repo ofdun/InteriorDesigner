@@ -21,7 +21,7 @@ import java.util.function.BiConsumer;
 
 @Singleton
 public class CanvasController {
-    private final double EPSILON = 1e-6;
+    private static final double EPSILON = 1e-6;
 
     private final Logger log = LoggerFactory.getLogger(CanvasController.class);
     private final Map<String, Runnable> eventCallbacks = new HashMap<>();
