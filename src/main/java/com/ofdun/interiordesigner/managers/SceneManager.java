@@ -3,6 +3,7 @@ package com.ofdun.interiordesigner.managers;
 import com.ofdun.interiordesigner.controllers.CanvasController;
 import com.ofdun.interiordesigner.controllers.ControlsController;
 import com.ofdun.interiordesigner.models.Camera;
+import com.ofdun.interiordesigner.models.LightingManager;
 import com.ofdun.interiordesigner.models.Mesh;
 import com.ofdun.interiordesigner.models.Projecter;
 import com.ofdun.interiordesigner.objectloaders.ObjectLoader;
@@ -27,6 +28,7 @@ public class SceneManager {
     private final Map<String, Mesh> _objects = new HashMap<>();
     private final Camera _camera = new Camera(this);
     private final Projecter _projecter = new Projecter(_camera, 1000, 800);
+    private final LightingManager _lightingManager;
     private final CanvasController _canvasController;
     private final ControlsController _controlsController;
     private final ObjectLoader _objectLoader;
@@ -34,10 +36,11 @@ public class SceneManager {
 
     @Inject
     SceneManager(CanvasController canvasController, ControlsController controlsController,
-                 ObjectLoader objectLoader) {
+                 ObjectLoader objectLoader, LightingManager lightingManager) {
         _canvasController = canvasController;
         _controlsController = controlsController;
         _objectLoader = objectLoader;
+        _lightingManager = lightingManager;
 
         bindCanvasEvents();
         bindControlsEvents();
@@ -155,39 +158,80 @@ public class SceneManager {
             var projectedPoints = projectAllPoints(vertices);
             var color = mesh.getColor();
 
-            renderFaces(faces, normalIndices, projectedPoints, normals, mesh.isRoom(), color);
+            renderFaces(faces, normalIndices, projectedPoints, vertices, normals, mesh.isRoom(), color);
         }
 
         _canvasController.render();
     }
 
     private void renderFaces(List<List<Integer>> faces, List<List<Integer>> normalIndices,
-                           List<Point3D> projectedPoints, List<Point3D> normals, Boolean insideView, Paint paint) {
+                           List<Point3D> projectedPoints, List<Point3D> worldVertices,
+                           List<Point3D> normals, Boolean insideView, Paint paint) {
         for (int faceIndex = 0; faceIndex < faces.size(); faceIndex++) {
             List<Integer> face = faces.get(faceIndex);
 
             if (face.size() >= 3) {
-                Point3D p1 = projectedPoints.get(face.get(0));
-                Point3D p2 = projectedPoints.get(face.get(1));
-                Point3D p3 = projectedPoints.get(face.get(2));
-
                 boolean shouldRender = shouldRenderTriangleWithNormals(
                         faceIndex, normalIndices, normals, insideView);
 
                 if (shouldRender) {
                     if (face.size() == 3) {
-                        _canvasController.drawTriangle(p1, p2, p3, paint);
+                        renderTriangleWithLighting(face, faceIndex, projectedPoints, worldVertices,
+                                                 normalIndices, normals, paint);
                     } else {
-                        Point3D tp1 = projectedPoints.get(face.get(0));
+                        var first = face.get(0);
                         for (int i = 1; i < face.size() - 1; i++) {
-                            Point3D tp2 = projectedPoints.get(face.get(i));
-                            Point3D tp3 = projectedPoints.get(face.get(i + 1));
-                            _canvasController.drawTriangle(tp1, tp2, tp3, paint);
+                            List<Integer> triangleFace = List.of(first, face.get(i), face.get(i + 1));
+                            renderTriangleWithLighting(triangleFace, faceIndex, projectedPoints, worldVertices,
+                                                     normalIndices, normals, paint);
                         }
                     }
                 }
             }
         }
+    }
+
+    private void renderTriangleWithLighting(List<Integer> face, int faceIndex, List<Point3D> projectedPoints,
+                                          List<Point3D> worldVertices, List<List<Integer>> normalIndices,
+                                          List<Point3D> normals, Paint basePaint) {
+        Point3D p1 = projectedPoints.get(face.get(0));
+        Point3D p2 = projectedPoints.get(face.get(1));
+        Point3D p3 = projectedPoints.get(face.get(2));
+
+        Point3D n1 = null, n2 = null, n3 = null;
+        if (!normals.isEmpty() && !normalIndices.isEmpty() && faceIndex < normalIndices.size()) {
+            List<Integer> faceNormalIndices = normalIndices.get(faceIndex);
+            if (faceNormalIndices.size() >= 3) {
+                if (faceNormalIndices.get(0) < normals.size()) n1 = normals.get(faceNormalIndices.get(0));
+                if (faceNormalIndices.get(1) < normals.size()) n2 = normals.get(faceNormalIndices.get(1));
+                if (faceNormalIndices.get(2) < normals.size()) n3 = normals.get(faceNormalIndices.get(2));
+            } else if (!faceNormalIndices.isEmpty() && faceNormalIndices.get(0) < normals.size()) {
+                Point3D sharedNormal = normals.get(faceNormalIndices.get(0));
+                n1 = n2 = n3 = sharedNormal;
+            }
+        }
+
+        Point3D w1 = worldVertices.get(face.get(0));
+        Point3D w2 = worldVertices.get(face.get(1));
+        Point3D w3 = worldVertices.get(face.get(2));
+
+        if (n1 == null || n2 == null || n3 == null) {
+            Point3D edge1 = w2.subtract(w1);
+            Point3D edge2 = w3.subtract(w1);
+            Point3D faceNormal = edge1.crossProduct(edge2).normalize();
+            n1 = n2 = n3 = faceNormal;
+        }
+
+        var triangleData = new CanvasController.TriangleLightingData(
+            p1, p2, p3,
+            w1, w2, w3,
+            n1, n2, n3,
+            _camera.getDir().multiply(-1),
+            (basePaint instanceof Color) ? (Color) basePaint : Color.GRAY,
+            _lightingManager
+        );
+
+        _canvasController.drawTriangleWithLighting(triangleData);
     }
 
     private boolean shouldRenderTriangleWithNormals(int faceIndex,
