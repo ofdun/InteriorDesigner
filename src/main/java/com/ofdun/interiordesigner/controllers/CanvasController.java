@@ -1,5 +1,6 @@
 package com.ofdun.interiordesigner.controllers;
 
+import com.ofdun.interiordesigner.models.LightingManager;
 import com.ofdun.interiordesigner.models.ZBuffer;
 import jakarta.inject.Singleton;
 import javafx.fxml.FXML;
@@ -127,38 +128,58 @@ public class CanvasController {
         isDragging = false;
     }
 
-    public void drawTriangle(Point3D p1, Point3D p2, Point3D p3, Paint paint) {
-        Point3D[] points = new Point3D[]{p1, p2, p3};
-        Arrays.sort(points, java.util.Comparator.comparingDouble(Point3D::getY));
-        p1 = points[0];
-        p2 = points[1];
-        p3 = points[2];
+    private void drawPoint(Point2D point, Paint paint) {
+        _invisibleGraphicsContext.setStroke(paint);
+        _invisibleGraphicsContext.strokeLine(point.getX(), point.getY(), point.getX(),  point.getY());
+    }
+
+    public void drawTriangleWithLighting(TriangleLightingData triangleData) {
+        TriangleData triangle = createTriangleData(triangleData);
+        RenderingContext context = new RenderingContext(
+            triangleData.viewDirection(),
+            triangleData.materialColor(),
+            triangleData.lightingManager()
+        );
+
+        renderTriangle(triangle, context);
+    }
+
+    private TriangleData createTriangleData(TriangleLightingData data) {
+        return new TriangleData(
+            sortPointsByY(data.screenP1(), data.screenP2(), data.screenP3()),
+            new Point3D[]{data.worldP1(), data.worldP2(), data.worldP3()},
+            new Point3D[]{data.normal1(), data.normal2(), data.normal3()}
+        );
+    }
+
+    private void renderTriangle(TriangleData triangle, RenderingContext context) {
+        Point3D[] sortedScreenPoints = triangle.screenPoints;
+        Point3D p1 = sortedScreenPoints[0];
+        Point3D p2 = sortedScreenPoints[1];
+        Point3D p3 = sortedScreenPoints[2];
 
         int y1 = (int) Math.round(p1.getY());
         int y2 = (int) Math.round(p2.getY());
         int y3 = (int) Math.round(p3.getY());
 
-        double denom = (p2.getY() - p3.getY()) * (p1.getX() - p3.getX()) +
-                (p3.getX() - p2.getX()) * (p1.getY() - p3.getY());
-
-        if (Math.abs(denom) < EPSILON)
-            return;
+        double barycentricDenominator = calculateBarycentricDenominator(p1, p2, p3);
+        if (Math.abs(barycentricDenominator) < EPSILON) return;
 
         for (int y = y1; y <= y2; y++) {
-            fillTriangleLine(p1, p2, p1, p3, y, p1, p2, p3, denom, paint);
+            renderTriangleLine(p1, p2, p1, p3, y, triangle, barycentricDenominator, context);
         }
 
         for (int y = y2 + 1; y <= y3; y++) {
-            fillTriangleLine(p2, p3, p1, p3, y, p1, p2, p3, denom, paint);
+            renderTriangleLine(p2, p3, p1, p3, y, triangle, barycentricDenominator, context);
         }
     }
 
-    private void fillTriangleLine(Point3D p1, Point3D p2, Point3D p3, Point3D p4, int y,
-                                  Point3D tp1, Point3D tp2, Point3D tp3, double denom, Paint paint) {
-        double x1 = (p2.getY() == p1.getY()) ? p1.getX() :
-                p1.getX() + (p2.getX() - p1.getX()) * (y - p1.getY()) / (p2.getY() - p1.getY());
-        double x2 = (p4.getY() == p3.getY()) ? p3.getX() :
-                p3.getX() + (p4.getX() - p3.getX()) * (y - p3.getY()) / (p4.getY() - p3.getY());
+    private void renderTriangleLine(Point3D edgeStart1, Point3D edgeEnd1,
+                                   Point3D edgeStart2, Point3D edgeEnd2,
+                                   int y, TriangleData triangle, double barycentricDenominator,
+                                   RenderingContext context) {
+        double x1 = interpolateXAtY(edgeStart1, edgeEnd1, y);
+        double x2 = interpolateXAtY(edgeStart2, edgeEnd2, y);
 
         if (x1 > x2) {
             double temp = x1; x1 = x2; x2 = temp;
@@ -168,24 +189,88 @@ public class CanvasController {
         int endX = (int) Math.round(x2);
 
         for (int x = startX; x <= endX; x++) {
-            double w1 = ((tp2.getY() - tp3.getY()) * (x - tp3.getX()) +
-                    (tp3.getX() - tp2.getX()) * (y - tp3.getY())) / denom;
-            double w2 = ((tp3.getY() - tp1.getY()) * (x - tp3.getX()) +
-                    (tp1.getX() - tp3.getX()) * (y - tp3.getY())) / denom;
-            double w3 = 1 - w1 - w2;
+            renderPixel(x, y, triangle, barycentricDenominator, context);
+        }
+    }
 
-            if (w1 >= 0 && w2 >= 0 && w3 >= 0) {
-                double z = w1 * tp1.getZ() + w2 * tp2.getZ() + w3 * tp3.getZ();
+    private void renderPixel(int x, int y, TriangleData triangle, double barycentricDenominator, RenderingContext context) {
+        Point3D[] screenPoints = triangle.screenPoints;
+        BarycentricCoordinates coords = calculateBarycentricCoordinates(x, y, screenPoints[0], screenPoints[1], screenPoints[2], barycentricDenominator);
 
-                if (_zBuffer.testAndSet(x, y, z)) {
-                    drawPoint(new Point2D(x, y), paint);
-                }
+        if (coords.isInsideTriangle()) {
+            double z = interpolateZ(screenPoints[0], screenPoints[1], screenPoints[2], coords);
+
+            if (_zBuffer.testAndSet(x, y, z)) {
+                Color litColor = context.lightingManager.calculateTriangleLighting(
+                        triangle.worldPoints[0], triangle.worldPoints[1], triangle.worldPoints[2],
+                        triangle.normals[0], triangle.normals[1], triangle.normals[2],
+                        context.viewDirection, context.materialColor, coords.w1, coords.w2, coords.w3);
+
+                drawPoint(new Point2D(x, y), litColor);
             }
         }
     }
 
-    private void drawPoint(Point2D point, Paint paint) {
-        _invisibleGraphicsContext.setStroke(paint);
-        _invisibleGraphicsContext.strokeLine(point.getX(), point.getY(), point.getX(),  point.getY());
+    private Point3D[] sortPointsByY(Point3D p1, Point3D p2, Point3D p3) {
+        Point3D[] points = new Point3D[]{p1, p2, p3};
+        Arrays.sort(points, java.util.Comparator.comparingDouble(Point3D::getY));
+        return points;
     }
+
+    private double calculateBarycentricDenominator(Point3D p1, Point3D p2, Point3D p3) {
+        return (p2.getY() - p3.getY()) * (p1.getX() - p3.getX()) +
+               (p3.getX() - p2.getX()) * (p1.getY() - p3.getY());
+    }
+
+    private double interpolateXAtY(Point3D p1, Point3D p2, double y) {
+        if (Math.abs(p2.getY() - p1.getY()) < EPSILON) {
+            return p1.getX();
+        }
+        return p1.getX() + (p2.getX() - p1.getX()) * (y - p1.getY()) / (p2.getY() - p1.getY());
+    }
+
+    private BarycentricCoordinates calculateBarycentricCoordinates(int x, int y,
+                                                                  Point3D p1, Point3D p2, Point3D p3,
+                                                                  double barycentricDenominator) {
+        double w1 = ((p2.getY() - p3.getY()) * (x - p3.getX()) +
+                    (p3.getX() - p2.getX()) * (y - p3.getY())) / barycentricDenominator;
+        double w2 = ((p3.getY() - p1.getY()) * (x - p3.getX()) +
+                    (p1.getX() - p3.getX()) * (y - p3.getY())) / barycentricDenominator;
+        double w3 = 1 - w1 - w2;
+
+        return new BarycentricCoordinates(w1, w2, w3);
+    }
+
+    private double interpolateZ(Point3D p1, Point3D p2, Point3D p3, BarycentricCoordinates coords) {
+        return coords.w1 * p1.getZ() + coords.w2 * p2.getZ() + coords.w3 * p3.getZ();
+    }
+
+    private record BarycentricCoordinates(double w1, double w2, double w3) {
+            boolean isInsideTriangle() {
+                return w1 >= 0 && w2 >= 0 && w3 >= 0;
+            }
+        }
+
+    private record TriangleData(
+        Point3D[] screenPoints,
+        Point3D[] worldPoints,
+        Point3D[] normals
+    ) {}
+
+    private record RenderingContext(
+        Point3D viewDirection,
+        Color materialColor,
+        LightingManager lightingManager
+    ) {}
+
+
+    public record TriangleLightingData(
+        Point3D screenP1, Point3D screenP2, Point3D screenP3,
+        Point3D worldP1, Point3D worldP2, Point3D worldP3,
+        Point3D normal1, Point3D normal2, Point3D normal3,
+        Point3D viewDirection,
+        Color materialColor,
+        LightingManager lightingManager
+    ) {}
 }
+
