@@ -32,7 +32,7 @@ public class Mesh {
         _transformState = SimpleMatrix.identity(4);
 
         if (_id.equals(ROOM_ID)) {
-            _color = Color.DARKGRAY;
+            _color = Color.rgb(0xC1, 0x9A, 0x6B);
         } else {
             _color = color;
         }
@@ -76,13 +76,12 @@ public class Mesh {
 
         double x = 0, y = 0, z = 0;
         for (Point3D p : _vertices) {
-            p = Transformer.transformPoint(p, _transformState);
             x += p.getX();
             y += p.getY();
             z += p.getZ();
         }
 
-        _center = new Point3D(x / _vertices.size(),y / _vertices.size(),z / _vertices.size());
+        _center = new Point3D(x / _vertices.size(), y / _vertices.size(), z / _vertices.size());
     }
 
     public Point3D getCenter() {

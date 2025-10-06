@@ -1,9 +1,11 @@
 package com.ofdun.interiordesigner.controllers;
 
 import jakarta.inject.Singleton;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.stage.Stage;
@@ -13,14 +15,19 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 @Singleton
 public class ControlsController {
     private final Map<String, Runnable> buttonEvents = new HashMap<>();
-    private static final Logger _log = LoggerFactory.getLogger(ControlsController.class);
+
+    private Consumer<String> choiceBoxSelectionCallback = null;
 
     @FXML
     private ListView<String> _objectsListView;
+
+    @FXML
+    private ChoiceBox<String> _objectChoiceBox;
 
     @FXML
     private Button _objectAddButton;
@@ -28,6 +35,25 @@ public class ControlsController {
     @FXML
     public void initialize() {
         _objectsListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+        if (_objectChoiceBox != null) {
+            _objectChoiceBox.getItems().clear();
+            _objectChoiceBox.getItems().add("None");
+            _objectChoiceBox.setValue("None");
+
+            _objectChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
+                if (choiceBoxSelectionCallback != null) {
+                    String id = (newV == null || "None".equals(newV)) ? null : newV;
+                    choiceBoxSelectionCallback.accept(id);
+                } else {
+                    handleButtonPress("render");
+                }
+            });
+        }
+    }
+
+    public void bindChoiceBoxSelection(Consumer<String> callback) {
+        this.choiceBoxSelectionCallback = callback;
     }
 
     public void bindButtonEvent(String buttonName, Runnable event) {
@@ -49,11 +75,30 @@ public class ControlsController {
     }
 
     public void addObjectToObjectListView(String object) {
-        _objectsListView.getItems().add(object);
+        Platform.runLater(() -> _objectsListView.getItems().add(object));
     }
 
     public void removeObjectFromObjectListView(String object) {
-        _objectsListView.getItems().remove(object);
+        Platform.runLater(() -> _objectsListView.getItems().remove(object));
+    }
+
+    public void addChoiceBoxItem(String id) {
+        if (_objectChoiceBox == null) return;
+        Platform.runLater(() -> {
+            if (!_objectChoiceBox.getItems().contains(id)) {
+                _objectChoiceBox.getItems().add(id);
+            }
+        });
+    }
+
+    public void removeChoiceBoxItem(String id) {
+        if (_objectChoiceBox == null) return;
+        Platform.runLater(() -> {
+            _objectChoiceBox.getItems().remove(id);
+            if (id.equals(_objectChoiceBox.getValue())) {
+                _objectChoiceBox.setValue("None");
+            }
+        });
     }
 
     public Stage getStage() {
