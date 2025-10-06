@@ -7,18 +7,20 @@ public class LightSource {
     private final Point3D position;
     private final Color color;
     private final double intensity;
-    private final double ambientStrength = 0.7;
+    private final String sourceMeshId;
+    private final double ambientStrength = 0.8;
     private final double diffuseStrength = 1.0;
-    private final double specularStrength = 0.6;
+    private final double specularStrength = 0.8;
     private final int shininess = 32;
     private final double ATTENUATION_COEFFICIENT = 1.0;
     private final double ATTENUATION_LINEAR_COEFFICIENT = 0.01;
     private final double ATTENUATION_QUADRO_COEFFICIENT = 0.001;
 
-    public LightSource(Point3D position, Color color, double intensity) {
+    public LightSource(Point3D position, Color color, double intensity, String sourceMeshId) {
         this.position = position;
         this.color = color;
         this.intensity = intensity;
+        this.sourceMeshId = sourceMeshId;
     }
 
     public Color calculateLighting(Point3D surfacePoint, Point3D surfaceNormal,
@@ -42,6 +44,22 @@ public class LightSource {
         return addColors(addColors(ambient, diffuse), specular);
     }
 
+    public Color calculateShadowLighting(Point3D surfacePoint, Point3D surfaceNormal,
+                                         Color materialColor) {
+        Point3D normal = surfaceNormal.normalize();
+        Point3D lightDirection = position.subtract(surfacePoint).normalize();
+
+        double distance = position.distance(surfacePoint);
+        double attenuation = intensity / (ATTENUATION_COEFFICIENT + ATTENUATION_LINEAR_COEFFICIENT * distance + ATTENUATION_QUADRO_COEFFICIENT * distance * distance);
+
+        Color ambient = multiplyColor(materialColor, color, ambientStrength * intensity * 0.5);
+
+        double diffuseFactor = Math.max(0.0, normal.dotProduct(lightDirection));
+        Color softDiffuse = multiplyColor(materialColor, color, 0.2 * diffuseFactor * attenuation * intensity);
+
+        return addColors(ambient, softDiffuse);
+    }
+
     private Point3D reflect(Point3D incident, Point3D normal) {
         return incident.subtract(normal.multiply(2.0 * incident.dotProduct(normal)));
     }
@@ -60,5 +78,13 @@ public class LightSource {
                 Math.min(1.0, c1.getGreen() + c2.getGreen()),
                 Math.min(1.0, c1.getBlue() + c2.getBlue())
         );
+    }
+
+    public Point3D getPosition() {
+        return position;
+    }
+
+    public String getSourceMeshId() {
+        return sourceMeshId;
     }
 }

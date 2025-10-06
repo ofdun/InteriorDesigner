@@ -1,6 +1,7 @@
 package com.ofdun.interiordesigner.controllers;
 
-import com.ofdun.interiordesigner.models.LightingManager;
+import com.ofdun.interiordesigner.managers.LightingManager;
+import com.ofdun.interiordesigner.models.Mesh;
 import com.ofdun.interiordesigner.models.ZBuffer;
 import jakarta.inject.Singleton;
 import javafx.fxml.FXML;
@@ -11,11 +12,13 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import javafx.scene.text.Font;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -30,10 +33,14 @@ public class CanvasController {
     @FXML
     private Canvas _canvas;
     private Canvas _invisibleCanvas;
-    private final ZBuffer _zBuffer = new ZBuffer(1000, 800);
+    private final ZBuffer _zBuffer = new ZBuffer(1250, 800);
 
     private GraphicsContext _graphicsContext;
     private GraphicsContext _invisibleGraphicsContext;
+
+    private long fpsLastTime = System.nanoTime();
+    private int fpsFrameCount = 0;
+    private double currentFps = 0.0;
 
     private boolean isDragging = false;
     private double lastMouseX;
@@ -56,6 +63,21 @@ public class CanvasController {
     }
 
     public void render() {
+        long now = System.nanoTime();
+        fpsFrameCount++;
+        double elapsedSec = (now - fpsLastTime) / 1_000_000_000.0;
+        if (elapsedSec >= 1.0) {
+            currentFps = fpsFrameCount / elapsedSec;
+            log.info("FPS: {}", String.format("%.2f", currentFps));
+            fpsFrameCount = 0;
+            fpsLastTime = now;
+        }
+
+        String fpsText = String.format("FPS: %.2f", currentFps);
+        _invisibleGraphicsContext.setFill(Color.BLACK);
+        _invisibleGraphicsContext.setFont(Font.font("Arial", 14));
+        _invisibleGraphicsContext.fillText(fpsText, 8, 18);
+
         _graphicsContext.drawImage(_invisibleCanvas.snapshot(null, null), 0, 0);
         clearInvisibleCanvas();
     }
@@ -133,13 +155,15 @@ public class CanvasController {
         _invisibleGraphicsContext.strokeLine(point.getX(), point.getY(), point.getX(),  point.getY());
     }
 
+
     public void drawTriangleWithLighting(TriangleLightingData triangleData) {
         TriangleData triangle = createTriangleData(triangleData);
 
         RenderingContext context = new RenderingContext(
             triangleData.viewDirection(),
             triangleData.materialColor(),
-            triangleData.lightingManager()
+            triangleData.lightingManager(),
+            triangleData.allMeshes()
         );
 
         renderTriangle(triangle, context);
@@ -159,7 +183,8 @@ public class CanvasController {
         return new TriangleData(
             new Point3D[]{vertices[0].screenPoint, vertices[1].screenPoint, vertices[2].screenPoint},
             new Point3D[]{vertices[0].worldPoint, vertices[1].worldPoint, vertices[2].worldPoint},
-            new Point3D[]{vertices[0].normal, vertices[1].normal, vertices[2].normal}
+            new Point3D[]{vertices[0].normal, vertices[1].normal, vertices[2].normal},
+            data.meshId()
         );
     }
 
@@ -209,27 +234,60 @@ public class CanvasController {
         BarycentricCoordinates coords = calculateBarycentricCoordinates(x, y, screenPoints[0], screenPoints[1], screenPoints[2], barycentricDenominator);
 
         if (coords.isInsideTriangle()) {
-            double z = interpolateZ(screenPoints[0], screenPoints[1], screenPoints[2], coords);
+            double z1 = screenPoints[0].getZ();
+            double z2 = screenPoints[1].getZ();
+            double z3 = screenPoints[2].getZ();
+
+            double oneOverZ = coords.w1 / z1 + coords.w2 / z2 + coords.w3 / z3;
+            double z = 1.0 / oneOverZ;
 
             if (_zBuffer.testAndSet(x, y, z)) {
+                PerspectiveWeights perspWeights = calculatePerspectiveWeights(coords, z1, z2, z3);
+
                 Point3D interpolatedNormal = interpolateNormals(
                     triangle.normals[0], triangle.normals[1], triangle.normals[2],
-                    coords.w1, coords.w2, coords.w3
+                    perspWeights.w1, perspWeights.w2, perspWeights.w3
                 );
 
-                Point3D interpolatedWorldPos = interpolateWorldPosition(
+                Point3D interpolatedWorldPos = interpolateWorldPositionPerspectiveCorrect(
                     triangle.worldPoints[0], triangle.worldPoints[1], triangle.worldPoints[2],
-                    coords.w1, coords.w2, coords.w3
+                    coords, z1, z2, z3
                 );
 
-                Color litColor = context.lightingManager.calculateLighting(
+                Color litColor = context.lightingManager.calculateLightingWithShadows(
                     interpolatedWorldPos, interpolatedNormal,
-                    context.viewDirection, context.materialColor
+                    context.viewDirection, context.materialColor, context.allMeshes
                 );
 
                 drawPoint(new Point2D(x, y), litColor);
             }
         }
+    }
+
+    private Point3D interpolateWorldPositionPerspectiveCorrect(Point3D p1, Point3D p2, Point3D p3,
+                                                              BarycentricCoordinates coords,
+                                                              double z1, double z2, double z3) {
+        double oneOverZ = coords.w1 / z1 + coords.w2 / z2 + coords.w3 / z3;
+
+        double xOverZ = coords.w1 * p1.getX() / z1 + coords.w2 * p2.getX() / z2 + coords.w3 * p3.getX() / z3;
+        double yOverZ = coords.w1 * p1.getY() / z1 + coords.w2 * p2.getY() / z2 + coords.w3 * p3.getY() / z3;
+        double zOverZ = coords.w1 * p1.getZ() / z1 + coords.w2 * p2.getZ() / z2 + coords.w3 * p3.getZ() / z3;
+
+        return new Point3D(
+            xOverZ / oneOverZ,
+            yOverZ / oneOverZ,
+            zOverZ / oneOverZ
+        );
+    }
+
+    private PerspectiveWeights calculatePerspectiveWeights(BarycentricCoordinates coords, double z1, double z2, double z3) {
+        double oneOverZ = coords.w1 / z1 + coords.w2 / z2 + coords.w3 / z3;
+
+        double w1 = (coords.w1 / z1) / oneOverZ;
+        double w2 = (coords.w2 / z2) / oneOverZ;
+        double w3 = (coords.w3 / z3) / oneOverZ;
+
+        return new PerspectiveWeights(w1, w2, w3);
     }
 
     private double calculateBarycentricDenominator(Point3D p1, Point3D p2, Point3D p3) {
@@ -256,17 +314,9 @@ public class CanvasController {
         return new BarycentricCoordinates(w1, w2, w3);
     }
 
-    private double interpolateZ(Point3D p1, Point3D p2, Point3D p3, BarycentricCoordinates coords) {
-        return coords.w1 * p1.getZ() + coords.w2 * p2.getZ() + coords.w3 * p3.getZ();
-    }
-
     private Point3D interpolateNormals(Point3D n1, Point3D n2, Point3D n3, double w1, double w2, double w3) {
         Point3D interpolated = interpolatePoint3D(n1, n2, n3, w1, w2, w3);
         return interpolated.normalize();
-    }
-
-    private Point3D interpolateWorldPosition(Point3D p1, Point3D p2, Point3D p3, double w1, double w2, double w3) {
-        return interpolatePoint3D(p1, p2, p3, w1, w2, w3);
     }
 
     private Point3D interpolatePoint3D(Point3D a, Point3D b, Point3D c, double w1, double w2, double w3) {
@@ -283,16 +333,20 @@ public class CanvasController {
             }
         }
 
+    private record PerspectiveWeights(double w1, double w2, double w3) {}
+
     private record TriangleData(
         Point3D[] screenPoints,
         Point3D[] worldPoints,
-        Point3D[] normals
+        Point3D[] normals,
+        String meshId
     ) {}
 
     private record RenderingContext(
         Point3D viewDirection,
         Color materialColor,
-        LightingManager lightingManager
+        LightingManager lightingManager,
+        List<Mesh> allMeshes
     ) {}
 
     public record TriangleLightingData(
@@ -301,6 +355,8 @@ public class CanvasController {
         Point3D normal1, Point3D normal2, Point3D normal3,
         Point3D viewDirection,
         Color materialColor,
-        LightingManager lightingManager
+        LightingManager lightingManager,
+        List<Mesh> allMeshes,
+        String meshId
     ) {}
 }

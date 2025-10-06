@@ -3,10 +3,10 @@ package com.ofdun.interiordesigner.managers;
 import com.ofdun.interiordesigner.controllers.CanvasController;
 import com.ofdun.interiordesigner.controllers.ControlsController;
 import com.ofdun.interiordesigner.models.Camera;
-import com.ofdun.interiordesigner.models.LightingManager;
 import com.ofdun.interiordesigner.models.Mesh;
 import com.ofdun.interiordesigner.models.Projecter;
 import com.ofdun.interiordesigner.objectloaders.ObjectLoader;
+import com.ofdun.interiordesigner.models.LightSource;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import javafx.geometry.Point3D;
@@ -44,6 +44,26 @@ public class SceneManager {
 
         bindCanvasEvents();
         bindControlsEvents();
+        _controlsController.bindChoiceBoxSelection(this::onLightChoiceSelected);
+    }
+
+    private void onLightChoiceSelected(String id) {
+        if (id == null) {
+            _lightingManager.clearLights();
+        } else {
+            Mesh mesh = _objects.get(id);
+            if (mesh != null) {
+                Point3D pos = mesh.getCenter();
+                Point3D lightPos = new Point3D(pos.getX(), pos.getY(), pos.getZ());
+                LightSource ls = new LightSource(lightPos, Color.WHITE, 1.0, mesh.getId());
+                log.info("Added single light source for mesh id {} at {}", mesh.getId(), lightPos);
+                _lightingManager.setSingleLightSource(ls);
+            } else {
+                _lightingManager.clearLights();
+            }
+        }
+
+        renderAllMeshes();
     }
 
     private void bindCanvasEvents() {
@@ -114,6 +134,10 @@ public class SceneManager {
 //            log.info(mesh.getCenter().toString());
             if (mesh != null) {
                 mesh.applyTransform(transform);
+
+                Point3D newCenter = mesh.getCenter();
+                Point3D newLightPos = new Point3D(newCenter.getX(), newCenter.getY(), newCenter.getZ());
+                _lightingManager.updateLightSourcePosition(selectedMeshId, newLightPos);
             }
         }
     }
@@ -125,14 +149,14 @@ public class SceneManager {
             _camera.resetToRoom();
         } else {
             _controlsController.addObjectToObjectListView(meshView.getId());
+            _controlsController.addChoiceBoxItem(meshView.getId());
         }
     }
 
     public Boolean removeMashById(String id) {
         _controlsController.removeObjectFromObjectListView(id);
+        _controlsController.removeChoiceBoxItem(id);
         var res = _objects.remove(id);
-
-        renderAllMeshes();
 
         return res != null;
     }
@@ -158,7 +182,7 @@ public class SceneManager {
             var projectedPoints = projectAllPoints(vertices);
             var color = mesh.getColor();
 
-            renderFaces(faces, normalIndices, projectedPoints, vertices, normals, mesh.isRoom(), color);
+            renderFaces(faces, normalIndices, projectedPoints, vertices, normals, mesh.isRoom(), color, mesh.getId());
         }
 
         _canvasController.render();
@@ -166,7 +190,7 @@ public class SceneManager {
 
     private void renderFaces(List<List<Integer>> faces, List<List<Integer>> normalIndices,
                            List<Point3D> projectedPoints, List<Point3D> worldVertices,
-                           List<Point3D> normals, Boolean insideView, Paint paint) {
+                           List<Point3D> normals, Boolean insideView, Paint paint, String meshId) {
         for (int faceIndex = 0; faceIndex < faces.size(); faceIndex++) {
             List<Integer> face = faces.get(faceIndex);
 
@@ -177,13 +201,13 @@ public class SceneManager {
                 if (shouldRender) {
                     if (face.size() == 3) {
                         renderTriangleWithLighting(face, faceIndex, projectedPoints, worldVertices,
-                                                 normalIndices, normals, paint);
+                                normalIndices, normals, paint, meshId);
                     } else {
                         var first = face.get(0);
                         for (int i = 1; i < face.size() - 1; i++) {
                             List<Integer> triangleFace = List.of(first, face.get(i), face.get(i + 1));
                             renderTriangleWithLighting(triangleFace, faceIndex, projectedPoints, worldVertices,
-                                                     normalIndices, normals, paint);
+                                    normalIndices, normals, paint, meshId);
                         }
                     }
                 }
@@ -193,7 +217,7 @@ public class SceneManager {
 
     private void renderTriangleWithLighting(List<Integer> face, int faceIndex, List<Point3D> projectedPoints,
                                           List<Point3D> worldVertices, List<List<Integer>> normalIndices,
-                                          List<Point3D> normals, Paint basePaint) {
+                                          List<Point3D> normals, Paint basePaint, String meshId) {
         Point3D p1 = projectedPoints.get(face.get(0));
         Point3D p2 = projectedPoints.get(face.get(1));
         Point3D p3 = projectedPoints.get(face.get(2));
@@ -222,13 +246,17 @@ public class SceneManager {
             n1 = n2 = n3 = faceNormal;
         }
 
+        List<Mesh> allMeshes = new ArrayList<>(_objects.values());
+
         var triangleData = new CanvasController.TriangleLightingData(
-            p1, p2, p3,
+             p1, p2, p3,
             w1, w2, w3,
             n1, n2, n3,
             _camera.getDir().multiply(-1),
             (basePaint instanceof Color) ? (Color) basePaint : Color.GRAY,
-            _lightingManager
+            _lightingManager,
+            allMeshes,
+            meshId
         );
 
         _canvasController.drawTriangleWithLighting(triangleData);
