@@ -45,9 +45,15 @@ public class SceneManager {
         bindCanvasEvents();
         bindControlsEvents();
         _controlsController.bindChoiceBoxSelection(this::onLightChoiceSelected);
+        _controlsController.bindLightIntensityChange(this::onLightIntensityChanged);
     }
 
     private void onLightChoiceSelected(String id) {
+        var intensity = _controlsController.getLightIntensity();
+        onLightChanged(id, intensity);
+    }
+
+    private void onLightChanged(String id, Double intensity) {
         if (id == null) {
             _lightingManager.clearLights();
         } else {
@@ -55,8 +61,8 @@ public class SceneManager {
             if (mesh != null) {
                 Point3D pos = mesh.getCenter();
                 Point3D lightPos = new Point3D(pos.getX(), pos.getY(), pos.getZ());
-                LightSource ls = new LightSource(lightPos, Color.WHITE, 1.0, mesh.getId());
-                log.info("Added single light source for mesh id {} at {}", mesh.getId(), lightPos);
+                LightSource ls = new LightSource(lightPos, Color.WHITE, intensity, mesh.getId());
+                log.info("Updated light source for mesh id {} at {} with intensity {}", mesh.getId(), lightPos, intensity);
                 _lightingManager.setSingleLightSource(ls);
             } else {
                 _lightingManager.clearLights();
@@ -64,6 +70,12 @@ public class SceneManager {
         }
 
         renderAllMeshes();
+    }
+
+    private void onLightIntensityChanged(Double intensity) {
+        var id = _controlsController.getChoiceBoxSelection();
+
+        onLightChanged(id, intensity);
     }
 
     private void bindCanvasEvents() {
