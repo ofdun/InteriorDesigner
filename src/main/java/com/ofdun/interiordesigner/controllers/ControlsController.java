@@ -8,6 +8,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.Slider;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,14 +21,19 @@ import java.util.function.Consumer;
 @Singleton
 public class ControlsController {
     private final Map<String, Runnable> buttonEvents = new HashMap<>();
+    private static final Logger _log = LoggerFactory.getLogger(ControlsController.class);
 
     private Consumer<String> choiceBoxSelectionCallback = null;
+    private Consumer<Double> lightIntensityChangeCallback = null;
 
     @FXML
     private ListView<String> _objectsListView;
 
     @FXML
     private ChoiceBox<String> _objectChoiceBox;
+
+    @FXML
+    private Slider _lightIntensitySlider;
 
     @FXML
     private Button _objectAddButton;
@@ -50,10 +56,39 @@ public class ControlsController {
                 }
             });
         }
+
+        if (_lightIntensitySlider != null) {
+            _lightIntensitySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (lightIntensityChangeCallback != null) {
+                    lightIntensityChangeCallback.accept(newVal.doubleValue());
+                }
+            });
+        }
     }
 
     public void bindChoiceBoxSelection(Consumer<String> callback) {
         this.choiceBoxSelectionCallback = callback;
+    }
+
+    public String getChoiceBoxSelection() {
+        if (_objectChoiceBox == null) {
+            return null;
+        }
+
+        String value = _objectChoiceBox.getValue();
+        return "None".equals(value) ? null : value;
+    }
+
+
+    public Double getLightIntensity() {
+        if (_lightIntensitySlider == null) {
+            return 1.0;
+        }
+        return _lightIntensitySlider.getValue();
+    }
+
+    public void bindLightIntensityChange(Consumer<Double> callback) {
+        this.lightIntensityChangeCallback = callback;
     }
 
     public void bindButtonEvent(String buttonName, Runnable event) {

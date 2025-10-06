@@ -87,4 +87,8 @@ public class LightSource {
     public String getSourceMeshId() {
         return sourceMeshId;
     }
+
+    public double getIntensity() {
+        return intensity;
+    }
 }

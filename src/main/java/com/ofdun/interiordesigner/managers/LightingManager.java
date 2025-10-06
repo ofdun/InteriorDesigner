@@ -32,7 +32,7 @@ public class LightingManager {
     public void updateLightSourcePosition(String meshId, Point3D newPosition) {
         for (LightSource light : lightSources) {
             if (meshId != null && meshId.equals(light.getSourceMeshId())) {
-                LightSource updatedLight = new LightSource(newPosition, Color.WHITE, 1.0, meshId);
+                LightSource updatedLight = new LightSource(newPosition, Color.WHITE, light.getIntensity(), meshId);
                 lightSources.remove(light);
                 lightSources.add(updatedLight);
                 break;
@@ -88,5 +88,9 @@ public class LightingManager {
                 Math.min(1.0, Math.max(0.0, color.getGreen())),
                 Math.min(1.0, Math.max(0.0, color.getBlue()))
         );
+    }
+
+    public List<LightSource> getLightSources() {
+        return List.copyOf(lightSources);
     }
 }
