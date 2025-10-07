@@ -151,6 +151,16 @@ public class ControlsController {
     }
 
     @FXML
+    private void onObjectScalePlusButtonPressed(ActionEvent ignored) {
+        handleButtonPress("objectScalePlus");
+    }
+
+    @FXML
+    private void onObjectScaleMinusButtonPressed(ActionEvent ignored) {
+        handleButtonPress("objectScaleMinus");
+    }
+
+    @FXML
     public void onCameraXPlusButtonPressed(ActionEvent ignored) {
         handleButtonPress("cameraXPlus");
     }

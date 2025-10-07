@@ -138,6 +138,11 @@ public class SceneManager {
                 transformSelectedMeshes(TransformMatrices.rotateZ(Mesh.ROTATION_STEP)));
         _controlsController.bindButtonEvent("objectZAngleMinus", () ->
                 transformSelectedMeshes(TransformMatrices.rotateZ(-Mesh.ROTATION_STEP)));
+
+        _controlsController.bindButtonEvent("objectScalePlus", () ->
+                transformSelectedMeshes(TransformMatrices.scale(Mesh.SCALE_STEP)));
+        _controlsController.bindButtonEvent("objectScaleMinus", () ->
+                transformSelectedMeshes(TransformMatrices.scale(1.0 / Mesh.SCALE_STEP)));
     }
 
     private void transformSelectedMeshes(SimpleMatrix transform) {

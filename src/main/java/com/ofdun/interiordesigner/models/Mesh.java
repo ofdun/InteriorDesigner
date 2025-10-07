@@ -11,7 +11,8 @@ import java.util.List;
 
 public class Mesh {
     public static final int MOVE_STEP = 5;
-    public static final double ROTATION_STEP = Math.toRadians(1);
+    public static final double ROTATION_STEP = Math.toRadians(10);
+    public static final double SCALE_STEP = 1.2;
     private final List<Point3D> _vertices;
     private final List<Point3D> _normals;
     private final List<List<Integer>> _faces;
