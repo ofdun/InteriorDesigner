@@ -189,26 +189,35 @@ public class SceneManager {
     }
 
     public void renderAllMeshes() {
-        List<Mesh> sortedMeshes = objects.values().stream()
-                .sorted((m1, m2) -> {
-                    double dist1 = m1.getCenter().distance(camera.getPosition());
-                    double dist2 = m2.getCenter().distance(camera.getPosition());
-                    return Double.compare(dist2, dist1);
-                })
-                .toList();
+        var room = objects.get("0");
 
-        for (Mesh mesh : sortedMeshes) {
-            var vertices = mesh.getVertices();
-            var normals = mesh.getNormals();
-            var faces = mesh.getFaces();
-            var normalIndices = mesh.getNormalIndices();
-            var projectedPoints = projectAllPoints(vertices);
-            var color = mesh.getColor();
+        if (room == null) {
+            throw new RuntimeException("Room mesh with ID \"0\" not found");
+        }
 
-            renderFaces(faces, normalIndices, projectedPoints, vertices, normals, mesh.isRoom(), color, mesh.getId());
+        renderMesh(room);
+        var vertices = room.getVertices();
+        renderEdges(room.getFaces(), room.getNormalIndices(), room.getNormals(), projectAllPoints(vertices), room.isRoom());
+
+        for (Mesh mesh : objects.values()) {
+            if (mesh.isRoom()) {
+                continue;
+            }
+            renderMesh(mesh);
         }
 
         canvasController.render();
+    }
+
+    private void renderMesh(Mesh mesh) {
+        var vertices = mesh.getVertices();
+        var normals = mesh.getNormals();
+        var faces = mesh.getFaces();
+        var normalIndices = mesh.getNormalIndices();
+        var projectedPoints = projectAllPoints(vertices);
+        var color = mesh.getColor();
+
+        renderFaces(faces, normalIndices, projectedPoints, vertices, normals, mesh.isRoom(), color, mesh.getId());
     }
 
     private void renderFaces(List<List<Integer>> faces, List<List<Integer>> normalIndices,
@@ -237,6 +246,29 @@ public class SceneManager {
                             renderTriangleWithLighting(triangleFace, faceIndex, projectedPoints, worldVertices,
                                     normalIndices, normals, paint, meshId, textureCoords, textureIndices, texture);
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    private void renderEdges(List<List<Integer>> faces, List<List<Integer>> normalIndices,
+                            List<Point3D> normals, List<Point3D> projectedPoints, Boolean insideView) {
+        for (int faceIndex = 0; faceIndex < faces.size(); faceIndex++) {
+            List<Integer> face = faces.get(faceIndex);
+
+            if (face.size() >= 3) {
+                boolean shouldRender = shouldRenderTriangleWithNormals(faceIndex, normalIndices, normals, insideView);
+
+                if (shouldRender) {
+                    for (int i = 0; i < face.size(); i++) {
+                        int currentIdx = face.get(i);
+                        int nextIdx = face.get((i + 1) % face.size());
+
+                        Point3D p1 = projectedPoints.get(currentIdx);
+                        Point3D p2 = projectedPoints.get(nextIdx);
+
+                        canvasController.drawLine(p1, p2, Color.rgb(60, 60, 60), 1.5);
                     }
                 }
             }
