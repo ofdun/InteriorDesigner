@@ -154,6 +154,11 @@ public class CanvasController {
         invisibleGraphicsContext.strokeLine(point.getX(), point.getY(), point.getX(),  point.getY());
     }
 
+    public void drawLine(Point3D p1, Point3D p2, Paint paint, double lineWidth) {
+        invisibleGraphicsContext.setStroke(paint);
+        invisibleGraphicsContext.setLineWidth(lineWidth);
+        invisibleGraphicsContext.strokeLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
+    }
 
     public void drawTriangleWithLighting(TriangleLightingData triangleData) {
         TriangleData triangle = createTriangleData(triangleData);
