@@ -192,7 +192,7 @@ public class SceneManager {
         var room = objects.get("0");
 
         if (room == null) {
-            throw new RuntimeException("No room mesh found");
+            throw new RuntimeException("Room mesh with ID \"0\" not found");
         }
 
         renderMesh(room);
