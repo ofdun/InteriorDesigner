@@ -3,6 +3,15 @@ package com.ofdun.interiordesigner.managers;
 import org.ejml.simple.SimpleMatrix;
 
 public class TransformMatrices {
+    public static SimpleMatrix scale(double step) {
+        return new SimpleMatrix(new double[][] {
+                {step, 0, 0, 0},
+                {0, step, 0, 0},
+                {0, 0, step, 0},
+                {0, 0, 0, 1}
+        });
+    }
+
     public static SimpleMatrix translateX(double step) {
         return new SimpleMatrix(new double[][] {
                 {1, 0, 0, 0},
