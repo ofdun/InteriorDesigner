@@ -9,6 +9,7 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -291,7 +292,7 @@ public class CanvasController {
         return new Point2D(uOverZ / oneOverZ, vOverZ / oneOverZ);
     }
 
-    private Color sampleTexture(javafx.scene.image.Image texture, Point2D uv) {
+    private Color sampleTexture(Image texture, Point2D uv) {
         if (texture == null) {
             return Color.GRAY;
         }
@@ -299,15 +300,12 @@ public class CanvasController {
         int width = (int) texture.getWidth();
         int height = (int) texture.getHeight();
 
-        // Нормализуем UV-координаты в диапазон [0, 1] с повторением текстуры
         double u = uv.getX() - Math.floor(uv.getX());
-        double v = 1.0 - (uv.getY() - Math.floor(uv.getY())); // Инвертируем V для правильной ориентации
+        double v = 1.0 - (uv.getY() - Math.floor(uv.getY()));
 
-        // Преобразуем в пиксельные координаты
         int texX = (int) (u * (width - 1));
         int texY = (int) (v * (height - 1));
 
-        // Ограничиваем координаты границами текстуры
         texX = Math.max(0, Math.min(width - 1, texX));
         texY = Math.max(0, Math.min(height - 1, texY));
 
