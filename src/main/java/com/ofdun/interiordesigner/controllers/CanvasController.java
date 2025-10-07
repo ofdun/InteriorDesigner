@@ -9,6 +9,7 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -31,12 +32,12 @@ public class CanvasController {
     private final Map<String, BiConsumer<Double, Double>> mouseEventCallbacks = new HashMap<>();
 
     @FXML
-    private Canvas _canvas;
-    private Canvas _invisibleCanvas;
-    private final ZBuffer _zBuffer = new ZBuffer(1250, 800);
+    private Canvas canvas;
+    private Canvas invisibleCanvas;
+    private final ZBuffer zBuffer = new ZBuffer(1250, 800);
 
-    private GraphicsContext _graphicsContext;
-    private GraphicsContext _invisibleGraphicsContext;
+    private GraphicsContext graphicsContext;
+    private GraphicsContext invisibleGraphicsContext;
 
     private long fpsLastTime = System.nanoTime();
     private int fpsFrameCount = 0;
@@ -48,17 +49,17 @@ public class CanvasController {
 
     @FXML
     public void initialize() {
-        _graphicsContext = _canvas.getGraphicsContext2D();
+        graphicsContext = canvas.getGraphicsContext2D();
 
-        _invisibleCanvas = new Canvas(_canvas.getWidth(), _canvas.getHeight());
-        _invisibleGraphicsContext = _invisibleCanvas.getGraphicsContext2D();
+        invisibleCanvas = new Canvas(canvas.getWidth(), canvas.getHeight());
+        invisibleGraphicsContext = invisibleCanvas.getGraphicsContext2D();
         setupCanvas();
     }
 
     private void setupCanvas() {
         fillDefaultColor();
-        _invisibleGraphicsContext.setStroke(Color.GRAY);
-        _invisibleGraphicsContext.setLineWidth(2);
+        invisibleGraphicsContext.setStroke(Color.GRAY);
+        invisibleGraphicsContext.setLineWidth(2);
         render();
     }
 
@@ -74,22 +75,22 @@ public class CanvasController {
         }
 
         String fpsText = String.format("FPS: %.2f", currentFps);
-        _invisibleGraphicsContext.setFill(Color.BLACK);
-        _invisibleGraphicsContext.setFont(Font.font("Arial", 14));
-        _invisibleGraphicsContext.fillText(fpsText, 8, 18);
+        invisibleGraphicsContext.setFill(Color.BLACK);
+        invisibleGraphicsContext.setFont(Font.font("Arial", 14));
+        invisibleGraphicsContext.fillText(fpsText, 8, 18);
 
-        _graphicsContext.drawImage(_invisibleCanvas.snapshot(null, null), 0, 0);
+        graphicsContext.drawImage(invisibleCanvas.snapshot(null, null), 0, 0);
         clearInvisibleCanvas();
     }
 
     private void fillDefaultColor() {
-        _invisibleGraphicsContext.setFill(Color.WHITE);
-        _invisibleGraphicsContext.fillRect(0, 0, _invisibleCanvas.getWidth(), _invisibleCanvas.getHeight());
+        invisibleGraphicsContext.setFill(Color.WHITE);
+        invisibleGraphicsContext.fillRect(0, 0, invisibleCanvas.getWidth(), invisibleCanvas.getHeight());
     }
 
     private void clearInvisibleCanvas() {
-        _zBuffer.clear();
-        _invisibleGraphicsContext.clearRect(0, 0, _invisibleCanvas.getWidth(), _invisibleCanvas.getHeight());
+        zBuffer.clear();
+        invisibleGraphicsContext.clearRect(0, 0, invisibleCanvas.getWidth(), invisibleCanvas.getHeight());
         fillDefaultColor();
     }
 
@@ -134,8 +135,6 @@ public class CanvasController {
             double yawAngle = -deltaX * sensitivity;
             double pitchAngle = -deltaY * sensitivity;
 
-//            log.info("Mouse dragged: deltaX = {}, deltaY = {}, yaw = {}, pitch = {}",
-//                    deltaX, deltaY, yawAngle, pitchAngle);
             handleMouseEvent("cameraOrbit", yawAngle, pitchAngle);
 
             lastMouseX = mouseEvent.getX();
@@ -151,8 +150,8 @@ public class CanvasController {
     }
 
     private void drawPoint(Point2D point, Paint paint) {
-        _invisibleGraphicsContext.setStroke(paint);
-        _invisibleGraphicsContext.strokeLine(point.getX(), point.getY(), point.getX(),  point.getY());
+        invisibleGraphicsContext.setStroke(paint);
+        invisibleGraphicsContext.strokeLine(point.getX(), point.getY(), point.getX(),  point.getY());
     }
 
 
@@ -163,7 +162,11 @@ public class CanvasController {
             triangleData.viewDirection(),
             triangleData.materialColor(),
             triangleData.lightingManager(),
-            triangleData.allMeshes()
+            triangleData.allMeshes(),
+            triangleData.texture(),
+            triangleData.uv1(),
+            triangleData.uv2(),
+            triangleData.uv3()
         );
 
         renderTriangle(triangle, context);
@@ -241,7 +244,7 @@ public class CanvasController {
             double oneOverZ = coords.w1 / z1 + coords.w2 / z2 + coords.w3 / z3;
             double z = 1.0 / oneOverZ;
 
-            if (_zBuffer.testAndSet(x, y, z)) {
+            if (zBuffer.testAndSet(x, y, z)) {
                 PerspectiveWeights perspWeights = calculatePerspectiveWeights(coords, z1, z2, z3);
 
                 Point3D interpolatedNormal = interpolateNormals(
@@ -254,13 +257,62 @@ public class CanvasController {
                     coords, z1, z2, z3
                 );
 
-                Color litColor = context.lightingManager.calculateLightingWithShadows(
-                    interpolatedWorldPos, interpolatedNormal,
-                    context.viewDirection, context.materialColor, context.allMeshes
-                );
+                Color finalColor;
 
-                drawPoint(new Point2D(x, y), litColor);
+                if (context.texture != null && context.uv1 != null && context.uv2 != null && context.uv3 != null) {
+                    Point2D interpolatedUV = interpolateUVPerspectiveCorrect(
+                        context.uv1, context.uv2, context.uv3, coords, z1, z2, z3);
+
+                    Color textureColor = sampleTexture(context.texture, interpolatedUV);
+
+                    finalColor = context.lightingManager.calculateLightingWithShadows(
+                        interpolatedWorldPos, interpolatedNormal,
+                        context.viewDirection, textureColor, context.allMeshes
+                    );
+                } else {
+                    finalColor = context.lightingManager.calculateLightingWithShadows(
+                        interpolatedWorldPos, interpolatedNormal,
+                        context.viewDirection, context.materialColor, context.allMeshes
+                    );
+                }
+
+                drawPoint(new Point2D(x, y), finalColor);
             }
+        }
+    }
+
+    private Point2D interpolateUVPerspectiveCorrect(Point2D uv1, Point2D uv2, Point2D uv3,
+                                                    BarycentricCoordinates coords,
+                                                    double z1, double z2, double z3) {
+        double oneOverZ = coords.w1 / z1 + coords.w2 / z2 + coords.w3 / z3;
+
+        double uOverZ = coords.w1 * uv1.getX() / z1 + coords.w2 * uv2.getX() / z2 + coords.w3 * uv3.getX() / z3;
+        double vOverZ = coords.w1 * uv1.getY() / z1 + coords.w2 * uv2.getY() / z2 + coords.w3 * uv3.getY() / z3;
+
+        return new Point2D(uOverZ / oneOverZ, vOverZ / oneOverZ);
+    }
+
+    private Color sampleTexture(Image texture, Point2D uv) {
+        if (texture == null) {
+            return Color.GRAY;
+        }
+
+        int width = (int) texture.getWidth();
+        int height = (int) texture.getHeight();
+
+        double u = uv.getX() - Math.floor(uv.getX());
+        double v = 1.0 - (uv.getY() - Math.floor(uv.getY()));
+
+        int texX = (int) (u * (width - 1));
+        int texY = (int) (v * (height - 1));
+
+        texX = Math.max(0, Math.min(width - 1, texX));
+        texY = Math.max(0, Math.min(height - 1, texY));
+
+        try {
+            return texture.getPixelReader().getColor(texX, texY);
+        } catch (Exception e) {
+            return Color.GRAY;
         }
     }
 
@@ -346,7 +398,11 @@ public class CanvasController {
         Point3D viewDirection,
         Color materialColor,
         LightingManager lightingManager,
-        List<Mesh> allMeshes
+        List<Mesh> allMeshes,
+        javafx.scene.image.Image texture,
+        Point2D uv1,
+        Point2D uv2,
+        Point2D uv3
     ) {}
 
     public record TriangleLightingData(
@@ -357,6 +413,9 @@ public class CanvasController {
         Color materialColor,
         LightingManager lightingManager,
         List<Mesh> allMeshes,
-        String meshId
+        String meshId,
+        Point2D uv1, Point2D uv2, Point2D uv3,
+        javafx.scene.image.Image texture
     ) {}
 }
+

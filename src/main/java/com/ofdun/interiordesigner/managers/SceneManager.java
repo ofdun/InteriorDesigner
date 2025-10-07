@@ -12,7 +12,8 @@ import jakarta.inject.Singleton;
 import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.stage.FileChooser;
+import javafx.stage.DirectoryChooser;
+import javafx.geometry.Point2D;
 import org.ejml.simple.SimpleMatrix;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,47 +26,47 @@ import java.util.Map;
 
 @Singleton
 public class SceneManager {
-    private final Map<String, Mesh> _objects = new HashMap<>();
-    private final Camera _camera = new Camera(this);
-    private final Projecter _projecter = new Projecter(_camera, 1000, 800);
-    private final LightingManager _lightingManager;
-    private final CanvasController _canvasController;
-    private final ControlsController _controlsController;
-    private final ObjectLoader _objectLoader;
+    private final Map<String, Mesh> objects = new HashMap<>();
+    private final Camera camera = new Camera(this);
+    private final Projecter projecter = new Projecter(camera, 1000, 800);
+    private final LightingManager lightingManager;
+    private final CanvasController canvasController;
+    private final ControlsController controlsController;
+    private final ObjectLoader objectLoader;
     private static final Logger log = LoggerFactory.getLogger(SceneManager.class);
 
     @Inject
     SceneManager(CanvasController canvasController, ControlsController controlsController,
                  ObjectLoader objectLoader, LightingManager lightingManager) {
-        _canvasController = canvasController;
-        _controlsController = controlsController;
-        _objectLoader = objectLoader;
-        _lightingManager = lightingManager;
+        this.canvasController = canvasController;
+        this.controlsController = controlsController;
+        this.objectLoader = objectLoader;
+        this.lightingManager = lightingManager;
 
         bindCanvasEvents();
         bindControlsEvents();
-        _controlsController.bindChoiceBoxSelection(this::onLightChoiceSelected);
-        _controlsController.bindLightIntensityChange(this::onLightIntensityChanged);
+        this.controlsController.bindChoiceBoxSelection(this::onLightChoiceSelected);
+        this.controlsController.bindLightIntensityChange(this::onLightIntensityChanged);
     }
 
     private void onLightChoiceSelected(String id) {
-        var intensity = _controlsController.getLightIntensity();
+        var intensity = controlsController.getLightIntensity();
         onLightChanged(id, intensity);
     }
 
     private void onLightChanged(String id, Double intensity) {
         if (id == null) {
-            _lightingManager.clearLights();
+            lightingManager.clearLights();
         } else {
-            Mesh mesh = _objects.get(id);
+            Mesh mesh = objects.get(id);
             if (mesh != null) {
                 Point3D pos = mesh.getCenter();
                 Point3D lightPos = new Point3D(pos.getX(), pos.getY(), pos.getZ());
                 LightSource ls = new LightSource(lightPos, Color.WHITE, intensity, mesh.getId());
                 log.info("Updated light source for mesh id {} at {} with intensity {}", mesh.getId(), lightPos, intensity);
-                _lightingManager.setSingleLightSource(ls);
+                lightingManager.setSingleLightSource(ls);
             } else {
-                _lightingManager.clearLights();
+                lightingManager.clearLights();
             }
         }
 
@@ -73,32 +74,37 @@ public class SceneManager {
     }
 
     private void onLightIntensityChanged(Double intensity) {
-        var id = _controlsController.getChoiceBoxSelection();
+        var id = controlsController.getChoiceBoxSelection();
 
         onLightChanged(id, intensity);
     }
 
     private void bindCanvasEvents() {
-        _canvasController.bindMouseEventCallback("cameraOrbit", _camera::orbit);
-        _canvasController.bindEventCallback("render", this::renderAllMeshes);
+        canvasController.bindMouseEventCallback("cameraOrbit", camera::orbit);
+        canvasController.bindEventCallback("render", this::renderAllMeshes);
     }
 
     private void bindControlsEvents() {
-        _controlsController.bindButtonEvent("render", this::renderAllMeshes);
-        _controlsController.bindButtonEvent("objectAdd", () -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Choose Object File");
-            fileChooser.getExtensionFilters().add(
-                    new FileChooser.ExtensionFilter("Object Files", "*.obj")
-            );
+        controlsController.bindButtonEvent("render", this::renderAllMeshes);
+        controlsController.bindButtonEvent("objectAdd", () -> {
+            var directoryChooser = new DirectoryChooser();
+            directoryChooser.setTitle("Choose Object Folder");
 
-            var stage = _controlsController.getStage();
+            var stage = controlsController.getStage();
 
-            File file = fileChooser.showOpenDialog(stage);
-            if (file != null) {
-                log.info("Selected file: {}", file.getAbsolutePath());
-                try (var stream = new BufferedReader(new FileReader(file))) {
-                    var meshView = _objectLoader.load(stream);
+            File dir = directoryChooser.showDialog(stage);
+            if (dir != null) {
+                log.info("Selected folder: {}", dir.getAbsolutePath());
+                File[] files = dir.listFiles((ignored, name) -> name.toLowerCase().endsWith(".obj"));
+
+                if (files == null || files.length == 0) {
+                    log.info("No .obj files found in the selected folder.");
+                    return;
+                }
+
+                log.info("Selected .obj file: {}", files[0].getAbsolutePath());
+                try (var stream = new BufferedReader(new FileReader(files[0]))) {
+                    var meshView = objectLoader.load(stream, dir);
                     addMeshView(meshView);
                     renderAllMeshes();
                 } catch (IOException e) {
@@ -107,86 +113,86 @@ public class SceneManager {
             }
         });
 
-        _controlsController.bindButtonEvent("objectRemove", () -> {
-            for (var selectedMeshId : _controlsController.getHighlightedListView()) {
+        controlsController.bindButtonEvent("objectRemove", () -> {
+            for (var selectedMeshId : controlsController.getHighlightedListView()) {
                 removeMashById(selectedMeshId);
             }
         });
 
-        _controlsController.bindButtonEvent("objectXPlus", () ->
+        controlsController.bindButtonEvent("objectXPlus", () ->
                 transformSelectedMeshes(TransformMatrices.translateX(Mesh.MOVE_STEP)));
-        _controlsController.bindButtonEvent("objectXMinus", () ->
+        controlsController.bindButtonEvent("objectXMinus", () ->
                 transformSelectedMeshes(TransformMatrices.translateX(-Mesh.MOVE_STEP)));
-        _controlsController.bindButtonEvent("objectYPlus", () ->
+        controlsController.bindButtonEvent("objectYPlus", () ->
                 transformSelectedMeshes(TransformMatrices.translateY(Mesh.MOVE_STEP)));
-        _controlsController.bindButtonEvent("objectYMinus", () ->
+        controlsController.bindButtonEvent("objectYMinus", () ->
                 transformSelectedMeshes(TransformMatrices.translateY(-Mesh.MOVE_STEP)));
-        _controlsController.bindButtonEvent("objectZPlus", () ->
+        controlsController.bindButtonEvent("objectZPlus", () ->
                 transformSelectedMeshes(TransformMatrices.translateZ(Mesh.MOVE_STEP)));
-        _controlsController.bindButtonEvent("objectZMinus", () ->
+        controlsController.bindButtonEvent("objectZMinus", () ->
                 transformSelectedMeshes(TransformMatrices.translateZ(-Mesh.MOVE_STEP)));
 
-        _controlsController.bindButtonEvent("objectXAnglePlus", () ->
+        controlsController.bindButtonEvent("objectXAnglePlus", () ->
                 transformSelectedMeshes(TransformMatrices.rotateX(Mesh.ROTATION_STEP)));
-        _controlsController.bindButtonEvent("objectXAngleMinus", () ->
+        controlsController.bindButtonEvent("objectXAngleMinus", () ->
                 transformSelectedMeshes(TransformMatrices.rotateX(-Mesh.ROTATION_STEP)));
-        _controlsController.bindButtonEvent("objectYAnglePlus", () ->
+        controlsController.bindButtonEvent("objectYAnglePlus", () ->
                 transformSelectedMeshes(TransformMatrices.rotateY(Mesh.ROTATION_STEP)));
-        _controlsController.bindButtonEvent("objectYAngleMinus", () ->
+        controlsController.bindButtonEvent("objectYAngleMinus", () ->
                 transformSelectedMeshes(TransformMatrices.rotateY(-Mesh.ROTATION_STEP)));
-        _controlsController.bindButtonEvent("objectZAnglePlus", () ->
+        controlsController.bindButtonEvent("objectZAnglePlus", () ->
                 transformSelectedMeshes(TransformMatrices.rotateZ(Mesh.ROTATION_STEP)));
-        _controlsController.bindButtonEvent("objectZAngleMinus", () ->
+        controlsController.bindButtonEvent("objectZAngleMinus", () ->
                 transformSelectedMeshes(TransformMatrices.rotateZ(-Mesh.ROTATION_STEP)));
 
-        _controlsController.bindButtonEvent("objectScalePlus", () ->
+        controlsController.bindButtonEvent("objectScalePlus", () ->
                 transformSelectedMeshes(TransformMatrices.scale(Mesh.SCALE_STEP)));
-        _controlsController.bindButtonEvent("objectScaleMinus", () ->
+        controlsController.bindButtonEvent("objectScaleMinus", () ->
                 transformSelectedMeshes(TransformMatrices.scale(1.0 / Mesh.SCALE_STEP)));
     }
 
     private void transformSelectedMeshes(SimpleMatrix transform) {
-        for (String selectedMeshId : _controlsController.getHighlightedListView()) {
-            var mesh = _objects.get(selectedMeshId);
+        for (String selectedMeshId : controlsController.getHighlightedListView()) {
+            var mesh = objects.get(selectedMeshId);
 //            log.info(mesh.getCenter().toString());
             if (mesh != null) {
                 mesh.applyTransform(transform);
 
                 Point3D newCenter = mesh.getCenter();
                 Point3D newLightPos = new Point3D(newCenter.getX(), newCenter.getY(), newCenter.getZ());
-                _lightingManager.updateLightSourcePosition(selectedMeshId, newLightPos);
+                lightingManager.updateLightSourcePosition(selectedMeshId, newLightPos);
             }
         }
     }
 
     public void addMeshView(Mesh meshView) {
-        _objects.put(meshView.getId(), meshView);
+        objects.put(meshView.getId(), meshView);
 
         if (meshView.isRoom()) {
-            _camera.resetToRoom();
+            camera.resetToRoom();
         } else {
-            _controlsController.addObjectToObjectListView(meshView.getId());
-            _controlsController.addChoiceBoxItem(meshView.getId());
+            controlsController.addObjectToObjectListView(meshView.getId());
+            controlsController.addChoiceBoxItem(meshView.getId());
         }
     }
 
     public Boolean removeMashById(String id) {
-        _controlsController.removeObjectFromObjectListView(id);
-        _controlsController.removeChoiceBoxItem(id);
-        var res = _objects.remove(id);
+        controlsController.removeObjectFromObjectListView(id);
+        controlsController.removeChoiceBoxItem(id);
+        var res = objects.remove(id);
 
         return res != null;
     }
 
     public Mesh getMeshById(String id) {
-        return _objects.get(id);
+        return objects.get(id);
     }
 
     public void renderAllMeshes() {
-        List<Mesh> sortedMeshes = _objects.values().stream()
+        List<Mesh> sortedMeshes = objects.values().stream()
                 .sorted((m1, m2) -> {
-                    double dist1 = m1.getCenter().distance(_camera.getPosition());
-                    double dist2 = m2.getCenter().distance(_camera.getPosition());
+                    double dist1 = m1.getCenter().distance(camera.getPosition());
+                    double dist2 = m2.getCenter().distance(camera.getPosition());
                     return Double.compare(dist2, dist1);
                 })
                 .toList();
@@ -202,12 +208,17 @@ public class SceneManager {
             renderFaces(faces, normalIndices, projectedPoints, vertices, normals, mesh.isRoom(), color, mesh.getId());
         }
 
-        _canvasController.render();
+        canvasController.render();
     }
 
     private void renderFaces(List<List<Integer>> faces, List<List<Integer>> normalIndices,
                            List<Point3D> projectedPoints, List<Point3D> worldVertices,
                            List<Point3D> normals, Boolean insideView, Paint paint, String meshId) {
+        Mesh mesh = objects.get(meshId);
+        var textureCoords = mesh != null ? mesh.getTextureCoords() : new ArrayList<Point2D>();
+        var textureIndices = mesh != null ? mesh.getTextureIndices() : new ArrayList<List<Integer>>();
+        var texture = mesh != null ? mesh.getTexture() : null;
+
         for (int faceIndex = 0; faceIndex < faces.size(); faceIndex++) {
             List<Integer> face = faces.get(faceIndex);
 
@@ -218,13 +229,13 @@ public class SceneManager {
                 if (shouldRender) {
                     if (face.size() == 3) {
                         renderTriangleWithLighting(face, faceIndex, projectedPoints, worldVertices,
-                                normalIndices, normals, paint, meshId);
+                                normalIndices, normals, paint, meshId, textureCoords, textureIndices, texture);
                     } else {
                         var first = face.get(0);
                         for (int i = 1; i < face.size() - 1; i++) {
                             List<Integer> triangleFace = List.of(first, face.get(i), face.get(i + 1));
                             renderTriangleWithLighting(triangleFace, faceIndex, projectedPoints, worldVertices,
-                                    normalIndices, normals, paint, meshId);
+                                    normalIndices, normals, paint, meshId, textureCoords, textureIndices, texture);
                         }
                     }
                 }
@@ -234,7 +245,9 @@ public class SceneManager {
 
     private void renderTriangleWithLighting(List<Integer> face, int faceIndex, List<Point3D> projectedPoints,
                                           List<Point3D> worldVertices, List<List<Integer>> normalIndices,
-                                          List<Point3D> normals, Paint basePaint, String meshId) {
+                                          List<Point3D> normals, Paint basePaint, String meshId,
+                                          List<Point2D> textureCoords, List<List<Integer>> textureIndices,
+                                          javafx.scene.image.Image texture) {
         Point3D p1 = projectedPoints.get(face.get(0));
         Point3D p2 = projectedPoints.get(face.get(1));
         Point3D p3 = projectedPoints.get(face.get(2));
@@ -263,20 +276,36 @@ public class SceneManager {
             n1 = n2 = n3 = faceNormal;
         }
 
-        List<Mesh> allMeshes = new ArrayList<>(_objects.values());
+        Point2D uv1 = null, uv2 = null, uv3 = null;
+        if (!textureCoords.isEmpty() && !textureIndices.isEmpty() && faceIndex < textureIndices.size()) {
+            List<Integer> faceTexIndices = textureIndices.get(faceIndex);
+            if (faceTexIndices.size() >= 3) {
+                int idx0 = faceTexIndices.get(0);
+                int idx1 = faceTexIndices.get(1);
+                int idx2 = faceTexIndices.get(2);
+
+                if (idx0 >= 0 && idx0 < textureCoords.size()) uv1 = textureCoords.get(idx0);
+                if (idx1 >= 0 && idx1 < textureCoords.size()) uv2 = textureCoords.get(idx1);
+                if (idx2 >= 0 && idx2 < textureCoords.size()) uv3 = textureCoords.get(idx2);
+            }
+        }
+
+        List<Mesh> allMeshes = new ArrayList<>(objects.values());
 
         var triangleData = new CanvasController.TriangleLightingData(
              p1, p2, p3,
             w1, w2, w3,
             n1, n2, n3,
-            _camera.getDir().multiply(-1),
+            camera.getDir().multiply(-1),
             (basePaint instanceof Color) ? (Color) basePaint : Color.GRAY,
-            _lightingManager,
+                lightingManager,
             allMeshes,
-            meshId
+            meshId,
+            uv1, uv2, uv3,
+            texture
         );
 
-        _canvasController.drawTriangleWithLighting(triangleData);
+        canvasController.drawTriangleWithLighting(triangleData);
     }
 
     private boolean shouldRenderTriangleWithNormals(int faceIndex,
@@ -298,7 +327,7 @@ public class SceneManager {
 
         Point3D faceNormal = normals.get(normalIndex);
 
-        Point3D cameraDir = _camera.getDir();
+        Point3D cameraDir = camera.getDir();
 
         double dotProduct = faceNormal.dotProduct(cameraDir);
 
@@ -312,7 +341,7 @@ public class SceneManager {
     private List<Point3D> projectAllPoints(List<Point3D> points) {
         List<Point3D> projectedPoints = new ArrayList<>();
         for (Point3D point : points) {
-            var projectedPoint = _projecter.project(point);
+            var projectedPoint = projecter.project(point);
             projectedPoints.add(projectedPoint);
         }
         return projectedPoints;

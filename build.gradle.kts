@@ -12,12 +12,13 @@ repositories {
 }
 
 val junitVersion = "5.10.2"
+val lombokVersion = "1.18.42"
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(24)
     }
-    modularity.inferModulePath.set(false)
+    modularity.inferModulePath.set(true)
 }
 
 tasks.withType<JavaCompile> {
@@ -29,7 +30,7 @@ application {
 }
 
 javafx {
-    version = "21"
+    version = "24"
     modules = listOf("javafx.controls", "javafx.fxml")
 }
 
@@ -48,18 +49,33 @@ dependencies {
     compileOnly("io.micronaut:micronaut-inject-java:4.3.4")
     implementation("jakarta.inject:jakarta.inject-api:2.0.1")
 
+    compileOnly("org.projectlombok:lombok:$lombokVersion")
+    annotationProcessor("org.projectlombok:lombok:$lombokVersion")
+    testCompileOnly("org.projectlombok:lombok:$lombokVersion")
+    testAnnotationProcessor("org.projectlombok:lombok:$lombokVersion")
+
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    jvmArgs = listOf(
+        "--enable-preview",
+        "--add-modules", "javafx.controls,javafx.fxml",
+        "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+        "--add-opens", "java.desktop/java.awt=ALL-UNNAMED",
+        "--add-opens", "javafx.graphics/javafx.scene=ALL-UNNAMED"
+    )
 }
 
 tasks.withType<JavaExec> {
     jvmArgs = listOf(
+        "--enable-preview",
         "--module-path", classpath.asPath,
         "--add-modules", "javafx.controls,javafx.fxml",
+        "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+        "--add-opens", "java.desktop/java.awt=ALL-UNNAMED",
         "--add-opens", "javafx.graphics/javafx.scene=ALL-UNNAMED"
     )
 }

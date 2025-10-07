@@ -37,7 +37,7 @@ public class MyApplication extends Application {
         var ol = context.getBean(ObjectLoader.class);
 
         try (var file = new BufferedReader(new FileReader("room.obj"))) {
-            var meshView = ol.load(file);
+            var meshView = ol.load(file, null);
             sm.addMeshView(meshView);
         }
 

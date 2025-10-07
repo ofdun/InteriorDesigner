@@ -3,13 +3,19 @@ package com.ofdun.interiordesigner.models;
 import com.ofdun.interiordesigner.managers.SceneManager;
 import com.ofdun.interiordesigner.managers.Transformer;
 import javafx.geometry.Point3D;
+import lombok.Getter;
 import org.ejml.simple.SimpleMatrix;
 
 public class Camera {
+    @Getter
     private Point3D position;
+    @Getter
     private Point3D up;
+    @Getter
     private Point3D dir;
+    @Getter
     private Point3D right;
+
     private final SceneManager sceneManager;
 
     public Camera(SceneManager sceneManager) {
@@ -122,22 +128,6 @@ public class Camera {
                     vector.getZ() / length);
         }
         return vector;
-    }
-
-    public Point3D getPosition() {
-        return position;
-    }
-
-    public Point3D getUp() {
-        return up;
-    }
-
-    public Point3D getDir() {
-        return dir;
-    }
-
-    public Point3D getRight() {
-        return right;
     }
 
     public void transform(SimpleMatrix transformationMatrix) {
