@@ -2,8 +2,11 @@ package com.ofdun.interiordesigner.models;
 
 import com.ofdun.interiordesigner.managers.Transformer;
 import javafx.geometry.Point3D;
+import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import javafx.scene.image.Image;
+import lombok.Getter;
 import org.ejml.simple.SimpleMatrix;
 
 import java.util.ArrayList;
@@ -13,36 +16,58 @@ public class Mesh {
     public static final int MOVE_STEP = 5;
     public static final double ROTATION_STEP = Math.toRadians(10);
     public static final double SCALE_STEP = 1.2;
-    private final List<Point3D> _vertices;
-    private final List<Point3D> _normals;
-    private final List<List<Integer>> _faces;
-    private final List<List<Integer>> _normalIndices;
-    private final String _id;
-    private final Paint _color;
-    private Point3D _center;
-    private SimpleMatrix _transformState;
+    private final List<Point3D> vertices;
+    private final List<Point3D> normals;
+
+    @Getter
+    private final List<Point2D> textureCoords;
+
+    @Getter
+    private final List<List<Integer>> faces;
+
+    @Getter
+    private final List<List<Integer>> normalIndices;
+
+    @Getter
+    private final List<List<Integer>> textureIndices;
+
+    @Getter
+    private final String id;
+
+    @Getter
+    private final Paint color;
+
+    @Getter
+    private final Image texture;
+
+    private Point3D center;
+    private SimpleMatrix transformState;
     private final String ROOM_ID = "0";
 
-    public Mesh(List<Point3D> vertices, List<Point3D> normals, List<List<Integer>> faces,
-                List<List<Integer>> normalIndices, String id, Paint color) {
-        _vertices = vertices;
-        _normals = normals;
-        _faces = faces;
-        _normalIndices = normalIndices;
-        _id = id;
-        _transformState = SimpleMatrix.identity(4);
+    public Mesh(List<Point3D> vertices, List<Point3D> normals, List<Point2D> textureCoords,
+                List<List<Integer>> faces, List<List<Integer>> normalIndices,
+                List<List<Integer>> textureIndices, String id, Paint color, Image texture) {
+        this.vertices = vertices;
+        this.normals = normals;
+        this.textureCoords = textureCoords;
+        this.faces = faces;
+        this.normalIndices = normalIndices;
+        this.textureIndices = textureIndices;
+        this.id = id;
+        this.texture = texture;
+        transformState = SimpleMatrix.identity(4);
 
-        if (_id.equals(ROOM_ID)) {
-            _color = Color.rgb(0xC1, 0x9A, 0x6B);
+        if (this.id.equals(ROOM_ID)) {
+            this.color = Color.rgb(0xC1, 0x9A, 0x6B);
         } else {
-            _color = color;
+            this.color = color;
         }
 
         calcCenter();
     }
 
     public Boolean isRoom() {
-        return _id.equals(ROOM_ID);
+        return id.equals(ROOM_ID);
     }
 
     public List<Point3D> getVertices() {
@@ -53,40 +78,24 @@ public class Mesh {
         return transformedNormals();
     }
 
-    public List<List<Integer>> getFaces() {
-        return _faces;
-    }
-
-    public List<List<Integer>> getNormalIndices() {
-        return _normalIndices;
-    }
-
-    public Paint getColor() {
-        return _color;
-    }
-
-    public String getId() {
-        return _id;
-    }
-
     private void calcCenter() {
-        if (_vertices.isEmpty()) {
-            _center = new Point3D(0, 0, 0);
+        if (vertices.isEmpty()) {
+            center = new Point3D(0, 0, 0);
             return;
         }
 
         double x = 0, y = 0, z = 0;
-        for (Point3D p : _vertices) {
+        for (Point3D p : vertices) {
             x += p.getX();
             y += p.getY();
             z += p.getZ();
         }
 
-        _center = new Point3D(x / _vertices.size(), y / _vertices.size(), z / _vertices.size());
+        center = new Point3D(x / vertices.size(), y / vertices.size(), z / vertices.size());
     }
 
     public Point3D getCenter() {
-        return Transformer.transformPoint(_center, _transformState);
+        return Transformer.transformPoint(center, transformState);
     }
 
     public void applyTransform(SimpleMatrix t) {
@@ -103,29 +112,29 @@ public class Mesh {
                 {0, 0, 1, 0},
                 {center.getX(), center.getY(), center.getZ(), 1},
         });
-        this._transformState = _transformState.mult(toCenter).mult(t).mult(fromCenter);
+        this.transformState = transformState.mult(toCenter).mult(t).mult(fromCenter);
     }
 
     private List<Point3D> transformedVertices() {
-        return _vertices.stream()
-                .map(v ->  Transformer.transformPoint(v, _transformState))
+        return vertices.stream()
+                .map(v ->  Transformer.transformPoint(v, transformState))
                 .toList();
     }
 
     private List<Point3D> transformedNormals() {
-        if (_normals.isEmpty()) {
+        if (normals.isEmpty()) {
             return new ArrayList<>();
         }
 
-        SimpleMatrix rotationMatrix = Transformer.extractRotation(_transformState);
+        SimpleMatrix rotationMatrix = Transformer.extractRotation(transformState);
 
-        return _normals.stream()
+        return normals.stream()
                 .map(n -> Transformer.transformPoint(n, rotationMatrix))
                 .toList();
     }
 
     public Point3D[] getBounds() {
-        if (_vertices.isEmpty()) {
+        if (vertices.isEmpty()) {
             return new Point3D[]{new Point3D(0, 0, 0), new Point3D(0, 0, 0)};
         }
 
@@ -153,11 +162,11 @@ public class Mesh {
         if (!(o instanceof Mesh mesh))
             return false;
 
-        return _id.equals(mesh._id);
+        return id.equals(mesh.id);
     }
 
     @Override
     public int hashCode() {
-        return Integer.parseInt(_id);
+        return Integer.parseInt(id);
     }
 }

@@ -1,6 +1,7 @@
 package com.ofdun.interiordesigner.objectreaders;
 
 import javafx.geometry.Point3D;
+import javafx.geometry.Point2D;
 
 import java.io.BufferedReader;
 import java.util.List;
@@ -11,4 +12,6 @@ public interface IObjectReader {
     List<List<Integer>> readAllFaces();
     List<Point3D> readAllNormals();
     List<List<Integer>> readAllNormalIndices();
+    List<Point2D> readAllTextureCoords();
+    List<List<Integer>> readAllTextureIndices();
 }

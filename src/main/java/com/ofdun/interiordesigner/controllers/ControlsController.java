@@ -27,27 +27,27 @@ public class ControlsController {
     private Consumer<Double> lightIntensityChangeCallback = null;
 
     @FXML
-    private ListView<String> _objectsListView;
+    private ListView<String> objectsListView;
 
     @FXML
-    private ChoiceBox<String> _objectChoiceBox;
+    private ChoiceBox<String> objectChoiceBox;
 
     @FXML
-    private Slider _lightIntensitySlider;
+    private Slider lightIntensitySlider;
 
     @FXML
-    private Button _objectAddButton;
+    private Button objectAddButton;
 
     @FXML
     public void initialize() {
-        _objectsListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        objectsListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
-        if (_objectChoiceBox != null) {
-            _objectChoiceBox.getItems().clear();
-            _objectChoiceBox.getItems().add("None");
-            _objectChoiceBox.setValue("None");
+        if (objectChoiceBox != null) {
+            objectChoiceBox.getItems().clear();
+            objectChoiceBox.getItems().add("None");
+            objectChoiceBox.setValue("None");
 
-            _objectChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
+            objectChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
                 if (choiceBoxSelectionCallback != null) {
                     String id = (newV == null || "None".equals(newV)) ? null : newV;
                     choiceBoxSelectionCallback.accept(id);
@@ -57,8 +57,8 @@ public class ControlsController {
             });
         }
 
-        if (_lightIntensitySlider != null) {
-            _lightIntensitySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+        if (lightIntensitySlider != null) {
+            lightIntensitySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
                 if (lightIntensityChangeCallback != null) {
                     lightIntensityChangeCallback.accept(newVal.doubleValue());
                 }
@@ -71,20 +71,20 @@ public class ControlsController {
     }
 
     public String getChoiceBoxSelection() {
-        if (_objectChoiceBox == null) {
+        if (objectChoiceBox == null) {
             return null;
         }
 
-        String value = _objectChoiceBox.getValue();
+        String value = objectChoiceBox.getValue();
         return "None".equals(value) ? null : value;
     }
 
 
     public Double getLightIntensity() {
-        if (_lightIntensitySlider == null) {
+        if (lightIntensitySlider == null) {
             return 1.0;
         }
-        return _lightIntensitySlider.getValue();
+        return lightIntensitySlider.getValue();
     }
 
     public void bindLightIntensityChange(Consumer<Double> callback) {
@@ -106,38 +106,38 @@ public class ControlsController {
     }
 
     public List<String> getHighlightedListView() {
-        return _objectsListView.getSelectionModel().getSelectedItems();
+        return objectsListView.getSelectionModel().getSelectedItems();
     }
 
     public void addObjectToObjectListView(String object) {
-        Platform.runLater(() -> _objectsListView.getItems().add(object));
+        Platform.runLater(() -> objectsListView.getItems().add(object));
     }
 
     public void removeObjectFromObjectListView(String object) {
-        Platform.runLater(() -> _objectsListView.getItems().remove(object));
+        Platform.runLater(() -> objectsListView.getItems().remove(object));
     }
 
     public void addChoiceBoxItem(String id) {
-        if (_objectChoiceBox == null) return;
+        if (objectChoiceBox == null) return;
         Platform.runLater(() -> {
-            if (!_objectChoiceBox.getItems().contains(id)) {
-                _objectChoiceBox.getItems().add(id);
+            if (!objectChoiceBox.getItems().contains(id)) {
+                objectChoiceBox.getItems().add(id);
             }
         });
     }
 
     public void removeChoiceBoxItem(String id) {
-        if (_objectChoiceBox == null) return;
+        if (objectChoiceBox == null) return;
         Platform.runLater(() -> {
-            _objectChoiceBox.getItems().remove(id);
-            if (id.equals(_objectChoiceBox.getValue())) {
-                _objectChoiceBox.setValue("None");
+            objectChoiceBox.getItems().remove(id);
+            if (id.equals(objectChoiceBox.getValue())) {
+                objectChoiceBox.setValue("None");
             }
         });
     }
 
     public Stage getStage() {
-        return (Stage) _objectAddButton.getScene().getWindow();
+        return (Stage) objectAddButton.getScene().getWindow();
     }
 
     @FXML

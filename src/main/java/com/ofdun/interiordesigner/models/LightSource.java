@@ -2,11 +2,15 @@ package com.ofdun.interiordesigner.models;
 
 import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
+import lombok.Getter;
 
 public class LightSource {
+    @Getter
     private final Point3D position;
     private final Color color;
+    @Getter
     private final double intensity;
+    @Getter
     private final String sourceMeshId;
     private final double ambientStrength = 0.8;
     private final double diffuseStrength = 1.0;
@@ -78,17 +82,5 @@ public class LightSource {
                 Math.min(1.0, c1.getGreen() + c2.getGreen()),
                 Math.min(1.0, c1.getBlue() + c2.getBlue())
         );
-    }
-
-    public Point3D getPosition() {
-        return position;
-    }
-
-    public String getSourceMeshId() {
-        return sourceMeshId;
-    }
-
-    public double getIntensity() {
-        return intensity;
     }
 }

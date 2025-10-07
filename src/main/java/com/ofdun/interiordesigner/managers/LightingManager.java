@@ -6,17 +6,15 @@ import com.ofdun.interiordesigner.models.ShadowRayTracer;
 import jakarta.inject.Singleton;
 import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Singleton
+@NoArgsConstructor
 public class LightingManager {
-    private final List<LightSource> lightSources;
-
-    public LightingManager() {
-        this.lightSources = new ArrayList<>();
-    }
+    private final List<LightSource> lightSources = new ArrayList<>();
 
     public void setSingleLightSource(LightSource lightSource) {
         lightSources.clear();
