@@ -17,7 +17,7 @@ import java.io.FileInputStream;
 public class ObjectLoader {
     private static final Logger log = LoggerFactory.getLogger(ObjectLoader.class);
     private final IObjectReader objectReader;
-    private static Integer id = 0;
+    private static Integer id = 1;
     private File currentDirectory;
 
     @Inject
