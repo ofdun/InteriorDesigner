@@ -57,7 +57,7 @@ public class Mesh {
         this.texture = texture;
         transformState = SimpleMatrix.identity(4);
 
-        if (this.id.equals(ROOM_ID)) {
+        if (isRoom()) {
             this.color = Color.rgb(0xC1, 0x9A, 0x6B);
         } else {
             this.color = color;
@@ -67,7 +67,7 @@ public class Mesh {
     }
 
     public Boolean isRoom() {
-        return id.equals(ROOM_ID);
+        return id.equals(ROOM_ID) || id.startsWith(ROOM_ID + "_");
     }
 
     public List<Point3D> getVertices() {

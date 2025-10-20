@@ -56,18 +56,17 @@ public class Camera {
     }
 
     private Point3D getRoomCenter() {
-        Mesh roomMesh = sceneManager.getMeshById("0");
-
-        if (roomMesh != null) {
-            Point3D[] bounds = roomMesh.getBounds();
-            return new Point3D(
-                    (bounds[0].getX() + bounds[1].getX()) / 2,
-                    (bounds[0].getY() + bounds[1].getY()) / 2,
-                    (bounds[0].getZ() + bounds[1].getZ()) / 2
-            );
-        } else {
-            return new Point3D(100, 100, 50);
-        }
+//        for (Mesh mesh : sceneManager.getAllMeshes()) {
+//            if (mesh.isRoom()) {
+//                var bounds = mesh.getBounds();
+//                return new Point3D(
+//                        (bounds[0].getX() + bounds[1].getX()) / 2,
+//                        (bounds[0].getY() + bounds[1].getY()) / 2,
+//                        (bounds[0].getZ() + bounds[1].getZ()) / 2
+//                );
+//            }
+//        }
+        return new Point3D(0, 0, 0);
     }
 
     private Point3D calculateInitialPosition(Point3D roomCenter) {

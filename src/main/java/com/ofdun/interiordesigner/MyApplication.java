@@ -1,19 +1,16 @@
 package com.ofdun.interiordesigner;
 
+import com.ofdun.interiordesigner.generators.RoomGenerator;
 import com.ofdun.interiordesigner.managers.SceneManager;
-import com.ofdun.interiordesigner.objectloaders.ObjectLoader;
 import io.micronaut.context.ApplicationContext;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.shape.TriangleMesh;
 import javafx.stage.Stage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 
 public class MyApplication extends Application {
@@ -34,11 +31,10 @@ public class MyApplication extends Application {
         stage.setScene(scene);
 
         var sm = context.getBean(SceneManager.class);
-        var ol = context.getBean(ObjectLoader.class);
 
-        try (var file = new BufferedReader(new FileReader("room.obj"))) {
-            var meshView = ol.load(file, null);
-            sm.addMeshView(meshView);
+        var roomParts = RoomGenerator.generateRoom(100, 100, 100, "0");
+        for (var roomPart : roomParts) {
+            sm.addMeshView(roomPart);
         }
 
         sm.renderAllMeshes();

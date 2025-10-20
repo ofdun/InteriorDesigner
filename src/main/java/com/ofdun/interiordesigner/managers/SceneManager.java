@@ -19,10 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Singleton
 public class SceneManager {
@@ -77,6 +74,10 @@ public class SceneManager {
         var id = controlsController.getChoiceBoxSelection();
 
         onLightChanged(id, intensity);
+    }
+
+    public List<Mesh> getAllMeshes() {
+        return List.copyOf(objects.values());
     }
 
     private void bindCanvasEvents() {
@@ -188,16 +189,18 @@ public class SceneManager {
         return objects.get(id);
     }
 
-    public void renderAllMeshes() {
-        var room = objects.get("0");
-
-        if (room == null) {
-            throw new RuntimeException("Room mesh with ID \"0\" not found");
+    private void renderRoom() {
+        for (Mesh mesh : objects.values()) {
+            if (mesh.isRoom()) {
+                renderMesh(mesh);
+                var vertices = mesh.getVertices();
+                renderEdges(mesh.getFaces(), mesh.getNormalIndices(), mesh.getNormals(), projectAllPoints(vertices), false);
+            }
         }
+    }
 
-        renderMesh(room);
-        var vertices = room.getVertices();
-        renderEdges(room.getFaces(), room.getNormalIndices(), room.getNormals(), projectAllPoints(vertices), room.isRoom());
+    public void renderAllMeshes() {
+        renderRoom();
 
         for (Mesh mesh : objects.values()) {
             if (mesh.isRoom()) {
@@ -217,12 +220,12 @@ public class SceneManager {
         var projectedPoints = projectAllPoints(vertices);
         var color = mesh.getColor();
 
-        renderFaces(faces, normalIndices, projectedPoints, vertices, normals, mesh.isRoom(), color, mesh.getId());
+        renderFaces(faces, normalIndices, projectedPoints, vertices, normals, !mesh.isRoom(), color, mesh.getId());
     }
 
     private void renderFaces(List<List<Integer>> faces, List<List<Integer>> normalIndices,
                            List<Point3D> projectedPoints, List<Point3D> worldVertices,
-                           List<Point3D> normals, Boolean insideView, Paint paint, String meshId) {
+                           List<Point3D> normals, Boolean reverse, Paint paint, String meshId) {
         Mesh mesh = objects.get(meshId);
         var textureCoords = mesh != null ? mesh.getTextureCoords() : new ArrayList<Point2D>();
         var textureIndices = mesh != null ? mesh.getTextureIndices() : new ArrayList<List<Integer>>();
@@ -233,7 +236,7 @@ public class SceneManager {
 
             if (face.size() >= 3) {
                 boolean shouldRender = shouldRenderTriangleWithNormals(
-                        faceIndex, normalIndices, normals, insideView);
+                        faceIndex, normalIndices, normals, reverse);
 
                 if (shouldRender) {
                     if (face.size() == 3) {
@@ -261,6 +264,7 @@ public class SceneManager {
                 boolean shouldRender = shouldRenderTriangleWithNormals(faceIndex, normalIndices, normals, insideView);
 
                 if (shouldRender) {
+                    log.info("1");
                     for (int i = 0; i < face.size(); i++) {
                         int currentIdx = face.get(i);
                         int nextIdx = face.get((i + 1) % face.size());
