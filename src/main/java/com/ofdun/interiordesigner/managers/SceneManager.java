@@ -194,7 +194,7 @@ public class SceneManager {
             if (mesh.isRoom()) {
                 renderMesh(mesh);
                 var vertices = mesh.getVertices();
-                renderEdges(mesh.getFaces(), mesh.getNormalIndices(), mesh.getNormals(), projectAllPoints(vertices), false);
+                renderEdges(mesh.getFaces(), mesh.getNormalIndices(), mesh.getNormals(), projectAllPoints(vertices));
             }
         }
     }
@@ -220,12 +220,12 @@ public class SceneManager {
         var projectedPoints = projectAllPoints(vertices);
         var color = mesh.getColor();
 
-        renderFaces(faces, normalIndices, projectedPoints, vertices, normals, !mesh.isRoom(), color, mesh.getId());
+        renderFaces(faces, normalIndices, projectedPoints, vertices, normals, color, mesh.getId());
     }
 
     private void renderFaces(List<List<Integer>> faces, List<List<Integer>> normalIndices,
                            List<Point3D> projectedPoints, List<Point3D> worldVertices,
-                           List<Point3D> normals, Boolean reverse, Paint paint, String meshId) {
+                           List<Point3D> normals, Paint paint, String meshId) {
         Mesh mesh = objects.get(meshId);
         var textureCoords = mesh != null ? mesh.getTextureCoords() : new ArrayList<Point2D>();
         var textureIndices = mesh != null ? mesh.getTextureIndices() : new ArrayList<List<Integer>>();
@@ -236,7 +236,7 @@ public class SceneManager {
 
             if (face.size() >= 3) {
                 boolean shouldRender = shouldRenderTriangleWithNormals(
-                        faceIndex, normalIndices, normals, reverse);
+                        faceIndex, normalIndices, normals);
 
                 if (shouldRender) {
                     if (face.size() == 3) {
@@ -256,12 +256,12 @@ public class SceneManager {
     }
 
     private void renderEdges(List<List<Integer>> faces, List<List<Integer>> normalIndices,
-                            List<Point3D> normals, List<Point3D> projectedPoints, Boolean insideView) {
+                            List<Point3D> normals, List<Point3D> projectedPoints) {
         for (int faceIndex = 0; faceIndex < faces.size(); faceIndex++) {
             List<Integer> face = faces.get(faceIndex);
 
             if (face.size() >= 3) {
-                boolean shouldRender = shouldRenderTriangleWithNormals(faceIndex, normalIndices, normals, insideView);
+                boolean shouldRender = shouldRenderTriangleWithNormals(faceIndex, normalIndices, normals);
 
                 if (shouldRender) {
                     log.info("1");
@@ -346,7 +346,7 @@ public class SceneManager {
 
     private boolean shouldRenderTriangleWithNormals(int faceIndex,
                                                    List<List<Integer>> normalIndices,
-                                                   List<Point3D> normals, Boolean insideView) {
+                                                   List<Point3D> normals) {
         if (normals.isEmpty() || normalIndices.isEmpty() || faceIndex >= normalIndices.size()) {
             return true;
         }
@@ -367,11 +367,7 @@ public class SceneManager {
 
         double dotProduct = faceNormal.dotProduct(cameraDir);
 
-        if (insideView) {
-            return dotProduct > 0;
-        } else {
-            return dotProduct < 0;
-        }
+        return dotProduct > 0;
     }
 
     private List<Point3D> projectAllPoints(List<Point3D> points) {
