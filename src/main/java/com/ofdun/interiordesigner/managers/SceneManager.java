@@ -367,7 +367,7 @@ public class SceneManager {
 
         double dotProduct = faceNormal.dotProduct(cameraDir);
 
-        return dotProduct > 0;
+        return dotProduct < 0;
     }
 
     private List<Point3D> projectAllPoints(List<Point3D> points) {

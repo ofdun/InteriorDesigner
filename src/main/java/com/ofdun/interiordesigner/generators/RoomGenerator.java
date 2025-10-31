@@ -41,7 +41,7 @@ public class RoomGenerator {
         vertices.add(new Point3D(hw, hh, -hd));
         vertices.add(new Point3D(-hw, hh, -hd));
 
-        normals.add(new Point3D(0, 0, -1));
+        normals.add(new Point3D(0, 0, 1));
 
         faces.add(Arrays.asList(0, 1, 2, 3));
 
@@ -62,7 +62,7 @@ public class RoomGenerator {
         vertices.add(new Point3D(-hw, hh, hd));
         vertices.add(new Point3D(-hw, hh, -hd));
 
-        normals.add(new Point3D(-1, 0, 0));
+        normals.add(new Point3D(1, 0, 0));
 
         faces.add(Arrays.asList(0, 1, 2, 3));
 
@@ -83,7 +83,7 @@ public class RoomGenerator {
         vertices.add(new Point3D(hw, hh, -hd));
         vertices.add(new Point3D(hw, hh, hd));
 
-        normals.add(new Point3D(1, 0, 0));
+        normals.add(new Point3D(-1, 0, 0));
 
         faces.add(Arrays.asList(0, 1, 2, 3));
 
@@ -104,7 +104,7 @@ public class RoomGenerator {
         vertices.add(new Point3D(hw, -hh, hd));
         vertices.add(new Point3D(-hw, -hh, hd));
 
-        normals.add(new Point3D(0, -1, 0));
+        normals.add(new Point3D(0, 1, 0));
 
         faces.add(Arrays.asList(0, 1, 2, 3));
 
@@ -125,7 +125,7 @@ public class RoomGenerator {
         vertices.add(new Point3D(hw, hh, -hd));
         vertices.add(new Point3D(-hw, hh, -hd));
 
-        normals.add(new Point3D(0, 1, 0));
+        normals.add(new Point3D(0, -1, 0));
 
         faces.add(Arrays.asList(0, 1, 2, 3));
 
@@ -146,7 +146,7 @@ public class RoomGenerator {
         vertices.add(new Point3D(hw, hh, hd));
         vertices.add(new Point3D(-hw, hh, hd));
 
-        normals.add(new Point3D(0, 0, 1));
+        normals.add(new Point3D(0, 0, -1));
 
         faces.add(Arrays.asList(0, 1, 2, 3));
 
