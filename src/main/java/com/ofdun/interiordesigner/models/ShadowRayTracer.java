@@ -29,7 +29,7 @@ public class ShadowRayTracer {
         }
 
         for (Mesh mesh : allMeshes) {
-            if (mesh.getId().equals("0")) {
+            if (mesh.isRoom()) {
                 continue;
             }
 
