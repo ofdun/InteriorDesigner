@@ -250,11 +250,10 @@ public class CanvasController {
             double z = 1.0 / oneOverZ;
 
             if (zBuffer.testAndSet(x, y, z)) {
-                PerspectiveWeights perspWeights = calculatePerspectiveWeights(coords, z1, z2, z3);
-
                 Point3D interpolatedNormal = interpolateNormals(
-                    triangle.normals[0], triangle.normals[1], triangle.normals[2],
-                    perspWeights.w1, perspWeights.w2, perspWeights.w3
+                    x, y,
+                    screenPoints[0], screenPoints[1], screenPoints[2],
+                    triangle.normals[0], triangle.normals[1], triangle.normals[2]
                 );
 
                 Point3D interpolatedWorldPos = interpolateWorldPositionPerspectiveCorrect(
@@ -337,16 +336,6 @@ public class CanvasController {
         );
     }
 
-    private PerspectiveWeights calculatePerspectiveWeights(BarycentricCoordinates coords, double z1, double z2, double z3) {
-        double oneOverZ = coords.w1 / z1 + coords.w2 / z2 + coords.w3 / z3;
-
-        double w1 = (coords.w1 / z1) / oneOverZ;
-        double w2 = (coords.w2 / z2) / oneOverZ;
-        double w3 = (coords.w3 / z3) / oneOverZ;
-
-        return new PerspectiveWeights(w1, w2, w3);
-    }
-
     private double calculateBarycentricDenominator(Point3D p1, Point3D p2, Point3D p3) {
         return (p2.getY() - p3.getY()) * (p1.getX() - p3.getX()) +
                (p3.getX() - p2.getX()) * (p1.getY() - p3.getY());
@@ -371,17 +360,60 @@ public class CanvasController {
         return new BarycentricCoordinates(w1, w2, w3);
     }
 
-    private Point3D interpolateNormals(Point3D n1, Point3D n2, Point3D n3, double w1, double w2, double w3) {
-        Point3D interpolated = interpolatePoint3D(n1, n2, n3, w1, w2, w3);
-        return interpolated.normalize();
-    }
+    private Point3D interpolateNormals(int x, int y, Point3D pA, Point3D pB, Point3D pC,
+                                       Point3D nA, Point3D nB, Point3D nC) {
+        double totalHeight = pC.getY() - pA.getY();
+        if (Math.abs(totalHeight) < EPSILON) {
+            return nA.normalize();
+        }
 
-    private Point3D interpolatePoint3D(Point3D a, Point3D b, Point3D c, double w1, double w2, double w3) {
-        return new Point3D(
-            w1 * a.getX() + w2 * b.getX() + w3 * c.getX(),
-            w1 * a.getY() + w2 * b.getY() + w3 * c.getY(),
-            w1 * a.getZ() + w2 * b.getZ() + w3 * c.getZ()
+        Point3D p1, p2, n1, n2;
+        double u;
+        double height;
+
+        if (y <= pB.getY()) {
+            p1 = pA;
+            p2 = pB;
+            n1 = nA;
+            n2 = nB;
+        } else {
+            p1 = pB;
+            p2 = pC;
+            n1 = nB;
+            n2 = nC;
+        }
+        height = p2.getY() - p1.getY();
+        u = Math.abs(height) < EPSILON ? 0 : (y - p1.getY()) / height;
+        u = Math.max(0, Math.min(1, u));
+
+        Point3D nQ = new Point3D(
+            u * n2.getX() + (1 - u) * n1.getX(),
+            u * n2.getY() + (1 - u) * n1.getY(),
+            u * n2.getZ() + (1 - u) * n1.getZ()
         );
+
+        double w = (y - pA.getY()) / totalHeight;
+        w = Math.max(0, Math.min(1, w));
+
+        Point3D nR = new Point3D(
+            w * nC.getX() + (1 - w) * nA.getX(),
+            w * nC.getY() + (1 - w) * nA.getY(),
+            w * nC.getZ() + (1 - w) * nA.getZ()
+        );
+
+        double qX = u * p2.getX() + (1 - u) * p1.getX();
+        double rX = w * pC.getX() + (1 - w) * pA.getX();
+        double xDiff = rX - qX;
+        double t = Math.abs(xDiff) < EPSILON ? 0.5 : (x - qX) / xDiff;
+        t = Math.max(0, Math.min(1, t));
+
+        Point3D nP = new Point3D(
+            t * nQ.getX() + (1 - t) * nR.getX(),
+            t * nQ.getY() + (1 - t) * nR.getY(),
+            t * nQ.getZ() + (1 - t) * nR.getZ()
+        );
+
+        return nP.normalize();
     }
 
     private record BarycentricCoordinates(double w1, double w2, double w3) {
