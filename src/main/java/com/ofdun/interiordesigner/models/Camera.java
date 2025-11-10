@@ -70,7 +70,7 @@ public class Camera {
     }
 
     private Point3D calculateInitialPosition(Point3D roomCenter) {
-        Mesh roomMesh = sceneManager.getMeshById("0");
+        Mesh roomMesh = sceneManager.getMeshById("0_floor");
 
         if (roomMesh != null) {
             Point3D[] roomBounds = roomMesh.getBounds();
@@ -78,12 +78,10 @@ public class Camera {
             double roomDepth = roomBounds[1].getY() - roomBounds[0].getY();
             double roomHeight = roomBounds[1].getZ() - roomBounds[0].getZ();
 
-            double distance = Math.max(Math.max(roomWidth, roomDepth), roomHeight) * 0.8;
-
             return new Point3D(
-                    roomBounds[0].getX() - distance * 0.5,
-                    roomBounds[0].getY() - distance * 0.5,
-                    roomCenter.getZ() + distance * 0.7
+                    roomCenter.getX() - roomWidth,
+                    roomCenter.getY() - roomDepth,
+                    roomCenter.getZ() + roomHeight * 1.5
             );
         } else {
             return new Point3D(-50, -50, 150);

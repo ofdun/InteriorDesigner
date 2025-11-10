@@ -1,6 +1,5 @@
 package com.ofdun.interiordesigner;
 
-import com.ofdun.interiordesigner.generators.RoomGenerator;
 import com.ofdun.interiordesigner.managers.SceneManager;
 import io.micronaut.context.ApplicationContext;
 import javafx.application.Application;
@@ -32,11 +31,7 @@ public class MyApplication extends Application {
 
         var sm = context.getBean(SceneManager.class);
 
-        var roomParts = RoomGenerator.generateRoom(100, 100, 100, "0");
-        for (var roomPart : roomParts) {
-            sm.addMeshView(roomPart);
-        }
-
+        sm.initializeRoom(100, 100, 100);
         sm.renderAllMeshes();
 
         stage.show();

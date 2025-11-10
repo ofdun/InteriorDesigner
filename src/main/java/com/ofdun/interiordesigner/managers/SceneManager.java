@@ -32,6 +32,13 @@ public class SceneManager {
     private final ObjectLoader objectLoader;
     private static final Logger log = LoggerFactory.getLogger(SceneManager.class);
 
+    private double roomWidth = 100;
+    private double roomHeight = 100;
+    private double roomDepth = 100;
+    private Color wallsColor = Color.rgb(0xC1, 0x9A, 0x6B);
+    private Color floorColor = Color.rgb(0xC1, 0x9A, 0x6B);
+    private Color ceilingColor = Color.rgb(0xC1, 0x9A, 0x6B);
+
     @Inject
     SceneManager(CanvasController canvasController, ControlsController controlsController,
                  ObjectLoader objectLoader, LightingManager lightingManager) {
@@ -47,6 +54,7 @@ public class SceneManager {
         this.controlsController.bindWallsColorChange(this::onWallsColorChanged);
         this.controlsController.bindFloorColorChange(this::onFloorColorChanged);
         this.controlsController.bindCeilingColorChange(this::onCeilingColorChanged);
+        this.controlsController.bindRoomSizeChange(this::onRoomSizeChanged);
     }
 
     private void onLightChoiceSelected(String id) {
@@ -80,6 +88,7 @@ public class SceneManager {
     }
 
     private void onWallsColorChanged(Color color) {
+        this.wallsColor = color;
         for (Mesh mesh : objects.values()) {
             if (mesh.isWall()) {
                 mesh.setColor(color);
@@ -89,6 +98,7 @@ public class SceneManager {
     }
 
     private void onFloorColorChanged(Color color) {
+        this.floorColor = color;
         for (Mesh mesh : objects.values()) {
             if (mesh.isFloor()) {
                 mesh.setColor(color);
@@ -98,11 +108,50 @@ public class SceneManager {
     }
 
     private void onCeilingColorChanged(Color color) {
+        this.ceilingColor = color;
         for (Mesh mesh : objects.values()) {
             if (mesh.isCeiling()) {
                 mesh.setColor(color);
             }
         }
+        renderAllMeshes();
+    }
+
+    private void onRoomSizeChanged(Double width, Double height, Double depth) {
+        this.roomWidth = width;
+        this.roomHeight = height;
+        this.roomDepth = depth;
+        recreateRoom();
+    }
+
+    private void recreateRoom() {
+        List<String> roomPartIds = new ArrayList<>();
+        for (Mesh mesh : objects.values()) {
+            if (mesh.isRoom()) {
+                roomPartIds.add(mesh.getId());
+            }
+        }
+
+        for (String id : roomPartIds) {
+            objects.remove(id);
+        }
+
+        var roomParts = com.ofdun.interiordesigner.generators.RoomGenerator.generateRoom(
+            roomWidth, roomHeight, roomDepth, "0");
+
+        for (var roomPart : roomParts) {
+            if (roomPart.isWall()) {
+                roomPart.setColor(wallsColor);
+            } else if (roomPart.isFloor()) {
+                roomPart.setColor(floorColor);
+            } else if (roomPart.isCeiling()) {
+                roomPart.setColor(ceilingColor);
+            }
+            objects.put(roomPart.getId(), roomPart);
+        }
+
+        camera.resetToRoom();
+
         renderAllMeshes();
     }
 
@@ -193,6 +242,19 @@ public class SceneManager {
                 Point3D newLightPos = new Point3D(newCenter.getX(), newCenter.getY(), newCenter.getZ());
                 lightingManager.updateLightSourcePosition(selectedMeshId, newLightPos);
             }
+        }
+    }
+
+    public void initializeRoom(double width, double height, double depth) {
+        this.roomWidth = width;
+        this.roomHeight = height;
+        this.roomDepth = depth;
+
+        var roomParts = com.ofdun.interiordesigner.generators.RoomGenerator.generateRoom(
+            width, height, depth, "0");
+
+        for (var roomPart : roomParts) {
+            addMeshView(roomPart);
         }
     }
 

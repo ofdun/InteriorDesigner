@@ -89,4 +89,24 @@
         </HBox>
     </VBox>
 
+    <VBox fillWidth="true" spacing="10.0">
+        <padding>
+            <Insets bottom="10" left="10" right="10" top="10" />
+        </padding>
+        <Label text="Room Size" />
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <Label text="Width:" minWidth="50" />
+            <TextField fx:id="roomWidthField" prefWidth="80" text="100" />
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <Label text="Height:" minWidth="50" />
+            <TextField fx:id="roomHeightField" prefWidth="80" text="100" />
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <Label text="Depth:" minWidth="50" />
+            <TextField fx:id="roomDepthField" prefWidth="80" text="100" />
+        </HBox>
+        <Button fx:id="applyRoomSizeButton" onAction="#onApplyRoomSizeButtonPressed" text="Apply Size" />
+    </VBox>
+
 </VBox>

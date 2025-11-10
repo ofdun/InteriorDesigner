@@ -10,6 +10,7 @@ import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -22,6 +23,11 @@ import java.util.function.Consumer;
 
 @Singleton
 public class ControlsController {
+    @FunctionalInterface
+    public interface TriConsumer<T, U, V> {
+        void accept(T t, U u, V v);
+    }
+
     private final Map<String, Runnable> buttonEvents = new HashMap<>();
     private static final Logger _log = LoggerFactory.getLogger(ControlsController.class);
 
@@ -30,6 +36,7 @@ public class ControlsController {
     private Consumer<Color> wallsColorChangeCallback = null;
     private Consumer<Color> floorColorChangeCallback = null;
     private Consumer<Color> ceilingColorChangeCallback = null;
+    private TriConsumer<Double, Double, Double> roomSizeChangeCallback = null;
 
     @FXML
     private ListView<String> objectsListView;
@@ -48,6 +55,18 @@ public class ControlsController {
 
     @FXML
     private ColorPicker ceilingColorPicker;
+
+    @FXML
+    private TextField roomWidthField;
+
+    @FXML
+    private TextField roomHeightField;
+
+    @FXML
+    private TextField roomDepthField;
+
+    @FXML
+    private Button applyRoomSizeButton;
 
     @FXML
     private Button objectAddButton;
@@ -142,6 +161,10 @@ public class ControlsController {
 
     public void bindCeilingColorChange(Consumer<Color> callback) {
         this.ceilingColorChangeCallback = callback;
+    }
+
+    public void bindRoomSizeChange(TriConsumer<Double, Double, Double> callback) {
+        this.roomSizeChangeCallback = callback;
     }
 
     public void bindButtonEvent(String buttonName, Runnable event) {
@@ -271,6 +294,22 @@ public class ControlsController {
     @FXML
     public void onCameraZAngleMinusButtonPressed(ActionEvent ignored) {
         handleButtonPress("cameraZAngleMinus");
+    }
+
+    @FXML
+    public void onApplyRoomSizeButtonPressed(ActionEvent ignored) {
+        if (roomSizeChangeCallback != null) {
+            try {
+                double width = Double.parseDouble(roomWidthField.getText());
+                double height = Double.parseDouble(roomHeightField.getText());
+                double depth = Double.parseDouble(roomDepthField.getText());
+
+                if (width > 0 && height > 0 && depth > 0) {
+                    roomSizeChangeCallback.accept(width, height, depth);
+                }
+            } catch (NumberFormatException _) {
+            }
+        }
     }
 
     @FXML
