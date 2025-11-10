@@ -237,66 +237,6 @@ public class ControlsController {
     }
 
     @FXML
-    public void onCameraXPlusButtonPressed(ActionEvent ignored) {
-        handleButtonPress("cameraXPlus");
-    }
-
-    @FXML
-    public void onCameraXMinusButtonPressed(ActionEvent ignored) {
-        handleButtonPress("cameraXMinus");
-    }
-
-    @FXML
-    public void onCameraYPlusButtonPressed(ActionEvent ignored) {
-        handleButtonPress("cameraYPlus");
-    }
-
-    @FXML
-    public void onCameraYMinusButtonPressed(ActionEvent ignored) {
-        handleButtonPress("cameraYMinus");
-    }
-
-    @FXML
-    public void onCameraZPlusButtonPressed(ActionEvent ignored) {
-        handleButtonPress("cameraZPlus");
-    }
-
-    @FXML
-    public void onCameraZMinusButtonPressed(ActionEvent ignored) {
-        handleButtonPress("cameraZMinus");
-    }
-
-    @FXML
-    public void onCameraXAnglePlusButtonPressed(ActionEvent ignored) {
-        handleButtonPress("cameraXAnglePlus");
-    }
-
-    @FXML
-    public void onCameraXAngleMinusButtonPressed(ActionEvent ignored) {
-        handleButtonPress("cameraXAngleMinus");
-    }
-
-    @FXML
-    public void onCameraYAnglePlusButtonPressed(ActionEvent ignored) {
-        handleButtonPress("cameraYAnglePlus");
-    }
-
-    @FXML
-    public void onCameraYAngleMinusButtonPressed(ActionEvent ignored) {
-        handleButtonPress("cameraYAngleMinus");
-    }
-
-    @FXML
-    public void onCameraZAnglePlusButtonPressed(ActionEvent ignored) {
-        handleButtonPress("cameraZAnglePlus");
-    }
-
-    @FXML
-    public void onCameraZAngleMinusButtonPressed(ActionEvent ignored) {
-        handleButtonPress("cameraZAngleMinus");
-    }
-
-    @FXML
     public void onApplyRoomSizeButtonPressed(ActionEvent ignored) {
         if (roomSizeChangeCallback != null) {
             try {
@@ -370,5 +310,15 @@ public class ControlsController {
     @FXML
     public void onObjectZAngleMinusButtonPressed(ActionEvent ignored) {
         handleButtonPress("objectZAngleMinus");
+    }
+
+    @FXML
+    public void onCameraZoomInButtonPressed(ActionEvent ignored) {
+        handleButtonPress("cameraZoomIn");
+    }
+
+    @FXML
+    public void onCameraZoomOutButtonPressed(ActionEvent ignored) {
+        handleButtonPress("cameraZoomOut");
     }
 }

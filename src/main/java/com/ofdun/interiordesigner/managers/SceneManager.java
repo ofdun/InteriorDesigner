@@ -236,6 +236,15 @@ public class SceneManager {
                 transformSelectedMeshes(TransformMatrices.scale(Mesh.SCALE_STEP)));
         controlsController.bindButtonEvent("objectScaleMinus", () ->
                 transformSelectedMeshes(TransformMatrices.scale(1.0 / Mesh.SCALE_STEP)));
+
+        controlsController.bindButtonEvent("cameraZoomIn", () -> {
+            camera.zoom(0.95);
+            renderAllMeshes();
+        });
+        controlsController.bindButtonEvent("cameraZoomOut", () -> {
+            camera.zoom(1.05);
+            renderAllMeshes();
+        });
     }
 
     private void transformSelectedMeshes(SimpleMatrix transform) {
