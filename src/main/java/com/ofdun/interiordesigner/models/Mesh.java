@@ -85,6 +85,10 @@ public class Mesh {
         return id.startsWith("window_");
     }
 
+    public Boolean isDoor() {
+        return id.startsWith("door_");
+    }
+
     public Boolean isWall() {
         return id.endsWith("_back") || id.endsWith("_left") || id.endsWith("_right") || id.endsWith("_front");
     }

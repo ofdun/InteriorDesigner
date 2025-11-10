@@ -48,6 +48,9 @@ public class ControlsController {
     private ChoiceBox<String> wallChoiceBox;
 
     @FXML
+    private ChoiceBox<String> doorWallChoiceBox;
+
+    @FXML
     private Slider lightIntensitySlider;
 
     @FXML
@@ -97,6 +100,12 @@ public class ControlsController {
             wallChoiceBox.getItems().clear();
             wallChoiceBox.getItems().addAll("Задняя стена", "Передняя стена", "Левая стена", "Правая стена");
             wallChoiceBox.setValue("Задняя стена");
+        }
+
+        if (doorWallChoiceBox != null) {
+            doorWallChoiceBox.getItems().clear();
+            doorWallChoiceBox.getItems().addAll("Задняя стена", "Передняя стена", "Левая стена", "Правая стена");
+            doorWallChoiceBox.setValue("Задняя стена");
         }
 
         if (lightIntensitySlider != null) {
@@ -153,6 +162,13 @@ public class ControlsController {
             return null;
         }
         return wallChoiceBox.getValue();
+    }
+
+    public String getSelectedDoorWall() {
+        if (doorWallChoiceBox == null) {
+            return null;
+        }
+        return doorWallChoiceBox.getValue();
     }
 
     public Double getLightIntensity() {
@@ -344,5 +360,10 @@ public class ControlsController {
     @FXML
     public void onAddWindowButtonPressed(ActionEvent ignored) {
         handleButtonPress("addWindow");
+    }
+
+    @FXML
+    public void onAddDoorButtonPressed(ActionEvent ignored) {
+        handleButtonPress("addDoor");
     }
 }
