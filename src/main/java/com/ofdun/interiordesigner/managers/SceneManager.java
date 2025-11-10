@@ -24,6 +24,8 @@ import java.util.*;
 @Singleton
 public class SceneManager {
     private final Map<String, Mesh> objects = new HashMap<>();
+    private final Map<String, String> displayNameToId = new HashMap<>();
+    private final Map<String, Integer> displayNameCounter = new HashMap<>();
     private final Camera camera = new Camera(this);
     private final Projecter projecter = new Projecter(camera, 1000, 800);
     private final LightingManager lightingManager;
@@ -57,15 +59,20 @@ public class SceneManager {
         this.controlsController.bindRoomSizeChange(this::onRoomSizeChanged);
     }
 
-    private void onLightChoiceSelected(String id) {
+    private void onLightChoiceSelected(String displayName) {
         var intensity = controlsController.getLightIntensity();
-        onLightChanged(id, intensity);
+        onLightChanged(displayName, intensity);
     }
 
-    private void onLightChanged(String id, Double intensity) {
-        if (id == null) {
+    private void onLightChanged(String displayName, Double intensity) {
+        if (displayName == null) {
             lightingManager.clearLights();
         } else {
+            String id = displayNameToId.get(displayName);
+            if (id == null) {
+                id = displayName;
+            }
+
             Mesh mesh = objects.get(id);
             if (mesh != null) {
                 Point3D pos = mesh.getCenter();
@@ -232,15 +239,20 @@ public class SceneManager {
     }
 
     private void transformSelectedMeshes(SimpleMatrix transform) {
-        for (String selectedMeshId : controlsController.getHighlightedListView()) {
-            var mesh = objects.get(selectedMeshId);
+        for (String selectedDisplayName : controlsController.getHighlightedListView()) {
+            String id = displayNameToId.get(selectedDisplayName);
+            if (id == null) {
+                id = selectedDisplayName;
+            }
+
+            var mesh = objects.get(id);
 //            log.info(mesh.getCenter().toString());
             if (mesh != null) {
                 mesh.applyTransform(transform);
 
                 Point3D newCenter = mesh.getCenter();
                 Point3D newLightPos = new Point3D(newCenter.getX(), newCenter.getY(), newCenter.getZ());
-                lightingManager.updateLightSourcePosition(selectedMeshId, newLightPos);
+                lightingManager.updateLightSourcePosition(id, newLightPos);
             }
         }
     }
@@ -264,14 +276,33 @@ public class SceneManager {
         if (meshView.isRoom()) {
             camera.resetToRoom();
         } else {
-            controlsController.addObjectToObjectListView(meshView.getId());
-            controlsController.addChoiceBoxItem(meshView.getId());
+            String baseName = meshView.getDisplayName();
+            String uniqueDisplayName = baseName;
+
+            if (displayNameToId.containsKey(uniqueDisplayName)) {
+                int counter = displayNameCounter.getOrDefault(baseName, 1);
+                counter++;
+                displayNameCounter.put(baseName, counter);
+                uniqueDisplayName = baseName + " (" + counter + ")";
+            } else {
+                displayNameCounter.putIfAbsent(baseName, 1);
+            }
+
+            displayNameToId.put(uniqueDisplayName, meshView.getId());
+            controlsController.addObjectToObjectListView(uniqueDisplayName);
+            controlsController.addChoiceBoxItem(uniqueDisplayName);
         }
     }
 
-    public Boolean removeMashById(String id) {
-        controlsController.removeObjectFromObjectListView(id);
-        controlsController.removeChoiceBoxItem(id);
+    public Boolean removeMashById(String displayName) {
+        String id = displayNameToId.get(displayName);
+        if (id == null) {
+            id = displayName;
+        }
+
+        controlsController.removeObjectFromObjectListView(displayName);
+        controlsController.removeChoiceBoxItem(displayName);
+        displayNameToId.remove(displayName);
         var res = objects.remove(id);
 
         return res != null;
@@ -457,7 +488,8 @@ public class SceneManager {
 
         Point3D cameraDir = camera.getDir();
 
-        double dotProduct = faceNormal.dotProduct(cameraDir);
+        double BIAS = 1e-2;
+        double dotProduct = faceNormal.dotProduct(cameraDir) - BIAS;
 
         return dotProduct < 0;
     }

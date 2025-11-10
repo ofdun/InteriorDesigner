@@ -36,6 +36,9 @@ public class Mesh {
     private final String id;
 
     @Getter
+    private final String displayName;
+
+    @Getter
     @Setter
     private Paint color;
 
@@ -49,6 +52,12 @@ public class Mesh {
     public Mesh(List<Point3D> vertices, List<Point3D> normals, List<Point2D> textureCoords,
                 List<List<Integer>> faces, List<List<Integer>> normalIndices,
                 List<List<Integer>> textureIndices, String id, Paint color, Image texture) {
+        this(vertices, normals, textureCoords, faces, normalIndices, textureIndices, id, id, color, texture);
+    }
+
+    public Mesh(List<Point3D> vertices, List<Point3D> normals, List<Point2D> textureCoords,
+                List<List<Integer>> faces, List<List<Integer>> normalIndices,
+                List<List<Integer>> textureIndices, String id, String displayName, Paint color, Image texture) {
         this.vertices = vertices;
         this.normals = normals;
         this.textureCoords = textureCoords;
@@ -56,6 +65,7 @@ public class Mesh {
         this.normalIndices = normalIndices;
         this.textureIndices = textureIndices;
         this.id = id;
+        this.displayName = displayName;
         this.texture = texture;
         transformState = SimpleMatrix.identity(4);
 

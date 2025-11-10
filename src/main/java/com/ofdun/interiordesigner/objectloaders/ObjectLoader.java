@@ -55,9 +55,11 @@ public class ObjectLoader {
 
         Image texture = loadTexture();
 
+        String displayName = currentDirectory != null ? currentDirectory.getName() : Integer.toString(id);
+
         return new Mesh(
                 vertices, normals, textureCoords, faces, normalIndices, textureIndices,
-                Integer.toString(id), Color.GRAY, texture
+                Integer.toString(id), displayName, Color.GRAY, texture
         );
     }
 
