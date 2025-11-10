@@ -45,6 +45,9 @@ public class ControlsController {
     private ChoiceBox<String> objectChoiceBox;
 
     @FXML
+    private ChoiceBox<String> wallChoiceBox;
+
+    @FXML
     private Slider lightIntensitySlider;
 
     @FXML
@@ -88,6 +91,12 @@ public class ControlsController {
                     handleButtonPress("render");
                 }
             });
+        }
+
+        if (wallChoiceBox != null) {
+            wallChoiceBox.getItems().clear();
+            wallChoiceBox.getItems().addAll("Задняя стена", "Передняя стена", "Левая стена", "Правая стена");
+            wallChoiceBox.setValue("Задняя стена");
         }
 
         if (lightIntensitySlider != null) {
@@ -139,6 +148,12 @@ public class ControlsController {
         return "None".equals(value) ? null : value;
     }
 
+    public String getSelectedWall() {
+        if (wallChoiceBox == null) {
+            return null;
+        }
+        return wallChoiceBox.getValue();
+    }
 
     public Double getLightIntensity() {
         if (lightIntensitySlider == null) {
@@ -193,7 +208,11 @@ public class ControlsController {
         Platform.runLater(() -> objectsListView.getItems().remove(object));
     }
 
-    public void addChoiceBoxItem(String id) {
+    public void removeMultipleObjectsFromObjectListView(List<String> objects) {
+        Platform.runLater(() -> objectsListView.getItems().removeAll(objects));
+    }
+
+    public void addLightningSourceChoiceBoxItem(String id) {
         if (objectChoiceBox == null) return;
         Platform.runLater(() -> {
             if (!objectChoiceBox.getItems().contains(id)) {
@@ -202,7 +221,7 @@ public class ControlsController {
         });
     }
 
-    public void removeChoiceBoxItem(String id) {
+    public void removeLightningSourceChoiceBoxItem(String id) {
         if (objectChoiceBox == null) return;
         Platform.runLater(() -> {
             objectChoiceBox.getItems().remove(id);
@@ -320,5 +339,10 @@ public class ControlsController {
     @FXML
     public void onCameraZoomOutButtonPressed(ActionEvent ignored) {
         handleButtonPress("cameraZoomOut");
+    }
+
+    @FXML
+    public void onAddWindowButtonPressed(ActionEvent ignored) {
+        handleButtonPress("addWindow");
     }
 }

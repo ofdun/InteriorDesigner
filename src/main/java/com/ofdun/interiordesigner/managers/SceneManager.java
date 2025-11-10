@@ -2,6 +2,7 @@ package com.ofdun.interiordesigner.managers;
 
 import com.ofdun.interiordesigner.controllers.CanvasController;
 import com.ofdun.interiordesigner.controllers.ControlsController;
+import com.ofdun.interiordesigner.generators.WindowGenerator;
 import com.ofdun.interiordesigner.models.Camera;
 import com.ofdun.interiordesigner.models.Mesh;
 import com.ofdun.interiordesigner.models.Projecter;
@@ -40,6 +41,7 @@ public class SceneManager {
     private Color wallsColor = Color.rgb(0xC1, 0x9A, 0x6B);
     private Color floorColor = Color.rgb(0xC1, 0x9A, 0x6B);
     private Color ceilingColor = Color.rgb(0xC1, 0x9A, 0x6B);
+    private int windowCounter = 0;
 
     @Inject
     SceneManager(CanvasController canvasController, ControlsController controlsController,
@@ -143,6 +145,28 @@ public class SceneManager {
             objects.remove(id);
         }
 
+        List<String> windowDisplayNames = new ArrayList<>();
+        for (Map.Entry<String, String> entry : displayNameToId.entrySet()) {
+            String displayName = entry.getKey();
+            String id = entry.getValue();
+            Mesh mesh = objects.get(id);
+            if (mesh != null && mesh.isWindow()) {
+                windowDisplayNames.add(displayName);
+            }
+        }
+
+        for (String displayName : windowDisplayNames) {
+            String id = displayNameToId.get(displayName);
+            objects.remove(id);
+            displayNameToId.remove(displayName);
+        }
+
+        if (!windowDisplayNames.isEmpty()) {
+            controlsController.removeMultipleObjectsFromObjectListView(windowDisplayNames);
+        }
+
+        displayNameCounter.put("Window", 1);
+
         var roomParts = com.ofdun.interiordesigner.generators.RoomGenerator.generateRoom(
             roomWidth, roomHeight, roomDepth, "0");
 
@@ -245,6 +269,43 @@ public class SceneManager {
             camera.zoom(1.05);
             renderAllMeshes();
         });
+
+        controlsController.bindButtonEvent("addWindow", this::onAddWindow);
+    }
+
+    private void onAddWindow() {
+        String selectedWall = controlsController.getSelectedWall();
+        if (selectedWall == null) {
+            return;
+        }
+
+        String wallId = switch (selectedWall) {
+            case "Задняя стена" -> "0_back";
+            case "Передняя стена" -> "0_front";
+            case "Левая стена" -> "0_left";
+            case "Правая стена" -> "0_right";
+            default -> null;
+        };
+
+        if (wallId == null) {
+            return;
+        }
+
+        double windowWidth = Math.min(roomWidth, roomDepth) * 0.2;
+        double windowHeight = roomHeight * 0.2;
+
+        double offsetX = 0;
+        double offsetZ = 0;
+
+        windowCounter++;
+        String windowId = "window_" + windowCounter;
+
+        Mesh window = WindowGenerator.generateWindow(
+            wallId, roomWidth, roomDepth, windowWidth, windowHeight, offsetX, offsetZ, windowId
+        );
+
+        addMeshView(window);
+        renderAllMeshes();
     }
 
     private void transformSelectedMeshes(SimpleMatrix transform) {
@@ -299,7 +360,10 @@ public class SceneManager {
 
             displayNameToId.put(uniqueDisplayName, meshView.getId());
             controlsController.addObjectToObjectListView(uniqueDisplayName);
-            controlsController.addChoiceBoxItem(uniqueDisplayName);
+
+            if (meshView.getCanBeLightningSource()) {
+                controlsController.addLightningSourceChoiceBoxItem(uniqueDisplayName);
+            }
         }
     }
 
@@ -310,7 +374,7 @@ public class SceneManager {
         }
 
         controlsController.removeObjectFromObjectListView(displayName);
-        controlsController.removeChoiceBoxItem(displayName);
+        controlsController.removeLightningSourceChoiceBoxItem(displayName);
         displayNameToId.remove(displayName);
         var res = objects.remove(id);
 
@@ -322,12 +386,27 @@ public class SceneManager {
     }
 
     private void renderRoom() {
+        var roomMeshes = new ArrayList<Mesh>();
+        var windowMeshes = new ArrayList<Mesh>();
+
         for (Mesh mesh : objects.values()) {
-            if (mesh.isRoom()) {
-                renderMesh(mesh);
-                var vertices = mesh.getVertices();
-                renderEdges(mesh.getFaces(), mesh.getNormalIndices(), mesh.getNormals(), projectAllPoints(vertices));
+            if (mesh.isWindow()) {
+                windowMeshes.add(mesh);
+            } else if (mesh.isRoom()) {
+                roomMeshes.add(mesh);
             }
+        }
+
+        for (Mesh mesh : roomMeshes) {
+            renderMesh(mesh);
+            var vertices = mesh.getVertices();
+            renderEdges(mesh.getFaces(), mesh.getNormalIndices(), mesh.getNormals(), projectAllPoints(vertices));
+        }
+
+        for (Mesh mesh : windowMeshes) {
+            renderMesh(mesh);
+            var vertices = mesh.getVertices();
+            renderEdges(mesh.getFaces(), mesh.getNormalIndices(), mesh.getNormals(), projectAllPoints(vertices));
         }
     }
 
@@ -335,7 +414,7 @@ public class SceneManager {
         renderRoom();
 
         for (Mesh mesh : objects.values()) {
-            if (mesh.isRoom()) {
+            if (mesh.isRoom() || mesh.isWindow()) {
                 continue;
             }
             renderMesh(mesh);
@@ -396,7 +475,6 @@ public class SceneManager {
                 boolean shouldRender = shouldRenderTriangleWithNormals(faceIndex, normalIndices, normals);
 
                 if (shouldRender) {
-                    log.info("1");
                     for (int i = 0; i < face.size(); i++) {
                         int currentIdx = face.get(i);
                         int nextIdx = face.get((i + 1) % face.size());

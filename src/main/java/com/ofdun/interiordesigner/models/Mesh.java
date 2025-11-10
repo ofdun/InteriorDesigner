@@ -24,6 +24,9 @@ public class Mesh {
     private final List<Point2D> textureCoords;
 
     @Getter
+    private final Boolean canBeLightningSource;
+
+    @Getter
     private final List<List<Integer>> faces;
 
     @Getter
@@ -51,13 +54,8 @@ public class Mesh {
 
     public Mesh(List<Point3D> vertices, List<Point3D> normals, List<Point2D> textureCoords,
                 List<List<Integer>> faces, List<List<Integer>> normalIndices,
-                List<List<Integer>> textureIndices, String id, Paint color, Image texture) {
-        this(vertices, normals, textureCoords, faces, normalIndices, textureIndices, id, id, color, texture);
-    }
-
-    public Mesh(List<Point3D> vertices, List<Point3D> normals, List<Point2D> textureCoords,
-                List<List<Integer>> faces, List<List<Integer>> normalIndices,
-                List<List<Integer>> textureIndices, String id, String displayName, Paint color, Image texture) {
+                List<List<Integer>> textureIndices, String id, String displayName,
+                Paint color, Image texture, Boolean canBeLightningSource) {
         this.vertices = vertices;
         this.normals = normals;
         this.textureCoords = textureCoords;
@@ -67,6 +65,7 @@ public class Mesh {
         this.id = id;
         this.displayName = displayName;
         this.texture = texture;
+        this.canBeLightningSource = canBeLightningSource;
         transformState = SimpleMatrix.identity(4);
 
         if (isRoom()) {
@@ -79,7 +78,11 @@ public class Mesh {
     }
 
     public Boolean isRoom() {
-        return id.equals(ROOM_ID) || id.startsWith(ROOM_ID + "_");
+        return (id.equals(ROOM_ID) || id.startsWith(ROOM_ID + "_")) && !isWindow();
+    }
+
+    public Boolean isWindow() {
+        return id.startsWith("window_");
     }
 
     public Boolean isWall() {

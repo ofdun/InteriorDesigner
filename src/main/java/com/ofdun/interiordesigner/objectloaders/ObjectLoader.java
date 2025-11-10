@@ -59,7 +59,7 @@ public class ObjectLoader {
 
         return new Mesh(
                 vertices, normals, textureCoords, faces, normalIndices, textureIndices,
-                Integer.toString(id), displayName, Color.GRAY, texture
+                Integer.toString(id), displayName, Color.GRAY, texture, true
         );
     }
 
