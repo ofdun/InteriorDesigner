@@ -20,17 +20,17 @@ public class RoomGenerator {
 
         Color roomColor = Color.rgb(0xC1, 0x9A, 0x6B);
 
-        roomParts.add(createBackWall(halfWidth, halfHeight, halfDepth, baseId + "_back", roomColor));
+        roomParts.add(createFloor(halfWidth, halfHeight, halfDepth, baseId + "_floor", roomColor));
         roomParts.add(createLeftWall(halfWidth, halfHeight, halfDepth, baseId + "_left", roomColor));
         roomParts.add(createRightWall(halfWidth, halfHeight, halfDepth, baseId + "_right", roomColor));
-        roomParts.add(createFloor(halfWidth, halfHeight, halfDepth, baseId + "_floor", roomColor));
-        roomParts.add(createCeiling(halfWidth, halfHeight, halfDepth, baseId + "_ceiling", roomColor));
+        roomParts.add(createBackWall(halfWidth, halfHeight, halfDepth, baseId + "_back", roomColor));
         roomParts.add(createFrontWall(halfWidth, halfHeight, halfDepth, baseId + "_front", roomColor));
+        roomParts.add(createCeiling(halfWidth, halfHeight, halfDepth, baseId + "_ceiling", roomColor));
 
         return roomParts;
     }
 
-    private static Mesh createBackWall(double hw, double hh, double hd, String id, Color color) {
+    private static Mesh createFloor(double hw, double hh, double hd, String id, Color color) {
         List<Point3D> vertices = new ArrayList<>();
         List<Point3D> normals = new ArrayList<>();
         List<List<Integer>> faces = new ArrayList<>();
@@ -93,7 +93,7 @@ public class RoomGenerator {
         return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, color, null);
     }
 
-    private static Mesh createFloor(double hw, double hh, double hd, String id, Color color) {
+    private static Mesh createBackWall(double hw, double hh, double hd, String id, Color color) {
         List<Point3D> vertices = new ArrayList<>();
         List<Point3D> normals = new ArrayList<>();
         List<List<Integer>> faces = new ArrayList<>();
@@ -114,7 +114,7 @@ public class RoomGenerator {
         return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, color, null);
     }
 
-    private static Mesh createCeiling(double hw, double hh, double hd, String id, Color color) {
+    private static Mesh createFrontWall(double hw, double hh, double hd, String id, Color color) {
         List<Point3D> vertices = new ArrayList<>();
         List<Point3D> normals = new ArrayList<>();
         List<List<Integer>> faces = new ArrayList<>();
@@ -135,7 +135,7 @@ public class RoomGenerator {
         return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, color, null);
     }
 
-    private static Mesh createFrontWall(double hw, double hh, double hd, String id, Color color) {
+    private static Mesh createCeiling(double hw, double hh, double hd, String id, Color color) {
         List<Point3D> vertices = new ArrayList<>();
         List<Point3D> normals = new ArrayList<>();
         List<List<Integer>> faces = new ArrayList<>();
