@@ -13,7 +13,6 @@ import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.text.Font;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,9 +38,6 @@ public class CanvasController {
     private GraphicsContext graphicsContext;
     private GraphicsContext invisibleGraphicsContext;
 
-    private long fpsLastTime = System.nanoTime();
-    private int fpsFrameCount = 0;
-    private double currentFps = 0.0;
 
     private boolean isDragging = false;
     private double lastMouseX;
@@ -64,20 +60,6 @@ public class CanvasController {
     }
 
     public void render() {
-        long now = System.nanoTime();
-        fpsFrameCount++;
-        double elapsedSec = (now - fpsLastTime) / 1_000_000_000.0;
-        if (elapsedSec >= 1.0) {
-            currentFps = fpsFrameCount / elapsedSec;
-            log.info("FPS: {}", String.format("%.2f", currentFps));
-            fpsFrameCount = 0;
-            fpsLastTime = now;
-        }
-
-        String fpsText = String.format("FPS: %.2f", currentFps);
-        invisibleGraphicsContext.setFill(Color.BLACK);
-        invisibleGraphicsContext.setFont(Font.font("Arial", 14));
-        invisibleGraphicsContext.fillText(fpsText, 8, 18);
 
         graphicsContext.drawImage(invisibleCanvas.snapshot(null, null), 0, 0);
         clearInvisibleCanvas();
