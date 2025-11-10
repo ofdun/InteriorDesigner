@@ -44,6 +44,9 @@ public class SceneManager {
         bindControlsEvents();
         this.controlsController.bindChoiceBoxSelection(this::onLightChoiceSelected);
         this.controlsController.bindLightIntensityChange(this::onLightIntensityChanged);
+        this.controlsController.bindWallsColorChange(this::onWallsColorChanged);
+        this.controlsController.bindFloorColorChange(this::onFloorColorChanged);
+        this.controlsController.bindCeilingColorChange(this::onCeilingColorChanged);
     }
 
     private void onLightChoiceSelected(String id) {
@@ -74,6 +77,33 @@ public class SceneManager {
         var id = controlsController.getChoiceBoxSelection();
 
         onLightChanged(id, intensity);
+    }
+
+    private void onWallsColorChanged(Color color) {
+        for (Mesh mesh : objects.values()) {
+            if (mesh.isWall()) {
+                mesh.setColor(color);
+            }
+        }
+        renderAllMeshes();
+    }
+
+    private void onFloorColorChanged(Color color) {
+        for (Mesh mesh : objects.values()) {
+            if (mesh.isFloor()) {
+                mesh.setColor(color);
+            }
+        }
+        renderAllMeshes();
+    }
+
+    private void onCeilingColorChanged(Color color) {
+        for (Mesh mesh : objects.values()) {
+            if (mesh.isCeiling()) {
+                mesh.setColor(color);
+            }
+        }
+        renderAllMeshes();
     }
 
     public List<Mesh> getAllMeshes() {

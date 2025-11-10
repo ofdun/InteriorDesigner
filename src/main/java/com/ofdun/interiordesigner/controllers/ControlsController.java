@@ -6,9 +6,11 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Slider;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +27,9 @@ public class ControlsController {
 
     private Consumer<String> choiceBoxSelectionCallback = null;
     private Consumer<Double> lightIntensityChangeCallback = null;
+    private Consumer<Color> wallsColorChangeCallback = null;
+    private Consumer<Color> floorColorChangeCallback = null;
+    private Consumer<Color> ceilingColorChangeCallback = null;
 
     @FXML
     private ListView<String> objectsListView;
@@ -34,6 +39,15 @@ public class ControlsController {
 
     @FXML
     private Slider lightIntensitySlider;
+
+    @FXML
+    private ColorPicker wallsColorPicker;
+
+    @FXML
+    private ColorPicker floorColorPicker;
+
+    @FXML
+    private ColorPicker ceilingColorPicker;
 
     @FXML
     private Button objectAddButton;
@@ -64,6 +78,33 @@ public class ControlsController {
                 }
             });
         }
+
+        if (wallsColorPicker != null) {
+            wallsColorPicker.setValue(Color.rgb(0xC1, 0x9A, 0x6B));
+            wallsColorPicker.setOnAction(event -> {
+                if (wallsColorChangeCallback != null) {
+                    wallsColorChangeCallback.accept(wallsColorPicker.getValue());
+                }
+            });
+        }
+
+        if (floorColorPicker != null) {
+            floorColorPicker.setValue(Color.rgb(0xC1, 0x9A, 0x6B));
+            floorColorPicker.setOnAction(event -> {
+                if (floorColorChangeCallback != null) {
+                    floorColorChangeCallback.accept(floorColorPicker.getValue());
+                }
+            });
+        }
+
+        if (ceilingColorPicker != null) {
+            ceilingColorPicker.setValue(Color.rgb(0xC1, 0x9A, 0x6B));
+            ceilingColorPicker.setOnAction(event -> {
+                if (ceilingColorChangeCallback != null) {
+                    ceilingColorChangeCallback.accept(ceilingColorPicker.getValue());
+                }
+            });
+        }
     }
 
     public void bindChoiceBoxSelection(Consumer<String> callback) {
@@ -89,6 +130,18 @@ public class ControlsController {
 
     public void bindLightIntensityChange(Consumer<Double> callback) {
         this.lightIntensityChangeCallback = callback;
+    }
+
+    public void bindWallsColorChange(Consumer<Color> callback) {
+        this.wallsColorChangeCallback = callback;
+    }
+
+    public void bindFloorColorChange(Consumer<Color> callback) {
+        this.floorColorChangeCallback = callback;
+    }
+
+    public void bindCeilingColorChange(Consumer<Color> callback) {
+        this.ceilingColorChangeCallback = callback;
     }
 
     public void bindButtonEvent(String buttonName, Runnable event) {

@@ -7,6 +7,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.image.Image;
 import lombok.Getter;
+import lombok.Setter;
 import org.ejml.simple.SimpleMatrix;
 
 import java.util.ArrayList;
@@ -35,7 +36,8 @@ public class Mesh {
     private final String id;
 
     @Getter
-    private final Paint color;
+    @Setter
+    private Paint color;
 
     @Getter
     private final Image texture;
@@ -68,6 +70,18 @@ public class Mesh {
 
     public Boolean isRoom() {
         return id.equals(ROOM_ID) || id.startsWith(ROOM_ID + "_");
+    }
+
+    public Boolean isWall() {
+        return id.endsWith("_back") || id.endsWith("_left") || id.endsWith("_right") || id.endsWith("_front");
+    }
+
+    public Boolean isFloor() {
+        return id.endsWith("_floor");
+    }
+
+    public Boolean isCeiling() {
+        return id.endsWith("_ceiling");
     }
 
     public List<Point3D> getVertices() {
