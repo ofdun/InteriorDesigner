@@ -48,7 +48,7 @@ public class RoomGenerator {
         normalIndices.add(Arrays.asList(0, 0, 0));
         normalIndices.add(Arrays.asList(0, 0, 0));
 
-        return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, color, null);
+        return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, id, color, null, false);
     }
 
     private static Mesh createLeftWall(double hw, double hh, double hd, String id, Color color) {
@@ -69,7 +69,7 @@ public class RoomGenerator {
         normalIndices.add(Arrays.asList(0, 0, 0));
         normalIndices.add(Arrays.asList(0, 0, 0));
 
-        return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, color, null);
+        return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, id, color, null, false);
     }
 
     private static Mesh createRightWall(double hw, double hh, double hd, String id, Color color) {
@@ -90,7 +90,7 @@ public class RoomGenerator {
         normalIndices.add(Arrays.asList(0, 0, 0));
         normalIndices.add(Arrays.asList(0, 0, 0));
 
-        return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, color, null);
+        return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, id, color, null, false);
     }
 
     private static Mesh createBackWall(double hw, double hh, double hd, String id, Color color) {
@@ -111,7 +111,7 @@ public class RoomGenerator {
         normalIndices.add(Arrays.asList(0, 0, 0));
         normalIndices.add(Arrays.asList(0, 0, 0));
 
-        return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, color, null);
+        return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, id, color, null, false);
     }
 
     private static Mesh createFrontWall(double hw, double hh, double hd, String id, Color color) {
@@ -132,7 +132,7 @@ public class RoomGenerator {
         normalIndices.add(Arrays.asList(0, 0, 0));
         normalIndices.add(Arrays.asList(0, 0, 0));
 
-        return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, color, null);
+        return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, id, color, null, false);
     }
 
     private static Mesh createCeiling(double hw, double hh, double hd, String id, Color color) {
@@ -153,6 +153,6 @@ public class RoomGenerator {
         normalIndices.add(Arrays.asList(0, 0, 0));
         normalIndices.add(Arrays.asList(0, 0, 0));
 
-        return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, color, null);
+        return new Mesh(vertices, normals, Collections.emptyList(), faces, normalIndices, Collections.emptyList(), id, id, color, null, false);
     }
 }
