@@ -25,7 +25,7 @@ public class MyApplication extends Application {
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(MyApplication.class.getResource("hello-view.fxml"));
         fxmlLoader.setControllerFactory(context::getBean);
-        Scene scene = new Scene(fxmlLoader.load(), 1250, 800);
+        Scene scene = new Scene(fxmlLoader.load(), 1250, 1000);
 //        stage.setTitle("Hello!");
         stage.setScene(scene);
 
