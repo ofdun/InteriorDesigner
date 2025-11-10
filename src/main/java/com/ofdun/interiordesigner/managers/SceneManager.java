@@ -2,6 +2,7 @@ package com.ofdun.interiordesigner.managers;
 
 import com.ofdun.interiordesigner.controllers.CanvasController;
 import com.ofdun.interiordesigner.controllers.ControlsController;
+import com.ofdun.interiordesigner.generators.DoorGenerator;
 import com.ofdun.interiordesigner.generators.WindowGenerator;
 import com.ofdun.interiordesigner.models.Camera;
 import com.ofdun.interiordesigner.models.Mesh;
@@ -42,6 +43,7 @@ public class SceneManager {
     private Color floorColor = Color.rgb(0xC1, 0x9A, 0x6B);
     private Color ceilingColor = Color.rgb(0xC1, 0x9A, 0x6B);
     private int windowCounter = 0;
+    private int doorCounter = 0;
 
     @Inject
     SceneManager(CanvasController canvasController, ControlsController controlsController,
@@ -145,27 +147,30 @@ public class SceneManager {
             objects.remove(id);
         }
 
-        List<String> windowDisplayNames = new ArrayList<>();
+        List<String> windowAndDoorDisplayNames = new ArrayList<>();
         for (Map.Entry<String, String> entry : displayNameToId.entrySet()) {
             String displayName = entry.getKey();
             String id = entry.getValue();
             Mesh mesh = objects.get(id);
-            if (mesh != null && mesh.isWindow()) {
-                windowDisplayNames.add(displayName);
+            if (mesh != null && (mesh.isWindow() || mesh.isDoor())) {
+                windowAndDoorDisplayNames.add(displayName);
             }
         }
 
-        for (String displayName : windowDisplayNames) {
+        for (String displayName : windowAndDoorDisplayNames) {
             String id = displayNameToId.get(displayName);
             objects.remove(id);
             displayNameToId.remove(displayName);
         }
 
-        if (!windowDisplayNames.isEmpty()) {
-            controlsController.removeMultipleObjectsFromObjectListView(windowDisplayNames);
+        if (!windowAndDoorDisplayNames.isEmpty()) {
+            controlsController.removeMultipleObjectsFromObjectListView(windowAndDoorDisplayNames);
         }
 
+        windowCounter = 0;
+        doorCounter = 0;
         displayNameCounter.put("Window", 1);
+        displayNameCounter.put("Door", 1);
 
         var roomParts = com.ofdun.interiordesigner.generators.RoomGenerator.generateRoom(
             roomWidth, roomHeight, roomDepth, "0");
@@ -271,6 +276,7 @@ public class SceneManager {
         });
 
         controlsController.bindButtonEvent("addWindow", this::onAddWindow);
+        controlsController.bindButtonEvent("addDoor", this::onAddDoor);
     }
 
     private void onAddWindow() {
@@ -305,6 +311,41 @@ public class SceneManager {
         );
 
         addMeshView(window);
+        renderAllMeshes();
+    }
+
+    private void onAddDoor() {
+        String selectedWall = controlsController.getSelectedDoorWall();
+        if (selectedWall == null) {
+            return;
+        }
+
+        String wallId = switch (selectedWall) {
+            case "Задняя стена" -> "0_back";
+            case "Передняя стена" -> "0_front";
+            case "Левая стена" -> "0_left";
+            case "Правая стена" -> "0_right";
+            default -> null;
+        };
+
+        if (wallId == null) {
+            return;
+        }
+
+        double doorWidth = Math.min(roomWidth, roomDepth) * 0.15;
+        double doorHeight = roomHeight * 0.7;
+
+        double offsetX = 0;
+        double offsetZ = -roomHeight / 2 + doorHeight / 2;
+
+        doorCounter++;
+        String doorId = "door_" + doorCounter;
+
+        Mesh door = DoorGenerator.generateDoor(
+            wallId, roomWidth, roomDepth, doorWidth, doorHeight, offsetX, offsetZ, doorId
+        );
+
+        addMeshView(door);
         renderAllMeshes();
     }
 
@@ -388,10 +429,13 @@ public class SceneManager {
     private void renderRoom() {
         var roomMeshes = new ArrayList<Mesh>();
         var windowMeshes = new ArrayList<Mesh>();
+        var doorMeshes = new ArrayList<Mesh>();
 
         for (Mesh mesh : objects.values()) {
             if (mesh.isWindow()) {
                 windowMeshes.add(mesh);
+            } else if (mesh.isDoor()) {
+                doorMeshes.add(mesh);
             } else if (mesh.isRoom()) {
                 roomMeshes.add(mesh);
             }
@@ -408,13 +452,19 @@ public class SceneManager {
             var vertices = mesh.getVertices();
             renderEdges(mesh.getFaces(), mesh.getNormalIndices(), mesh.getNormals(), projectAllPoints(vertices));
         }
+
+        for (Mesh mesh : doorMeshes) {
+            renderMesh(mesh);
+            var vertices = mesh.getVertices();
+            renderEdges(mesh.getFaces(), mesh.getNormalIndices(), mesh.getNormals(), projectAllPoints(vertices));
+        }
     }
 
     public void renderAllMeshes() {
         renderRoom();
 
         for (Mesh mesh : objects.values()) {
-            if (mesh.isRoom() || mesh.isWindow()) {
+            if (mesh.isRoom() || mesh.isWindow() || mesh.isDoor()) {
                 continue;
             }
             renderMesh(mesh);

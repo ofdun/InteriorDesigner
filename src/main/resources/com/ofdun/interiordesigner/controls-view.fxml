@@ -141,6 +141,16 @@
         <Button fx:id="addWindowButton" onAction="#onAddWindowButtonPressed" text="Добавить окно" />
     </VBox>
 
+    <VBox fillWidth="true" spacing="10.0">
+        <padding>
+            <Insets bottom="10" left="10" right="10" top="10" />
+        </padding>
+        <Label text="Двери" />
+        <Label text="Выберите стену:" />
+        <ChoiceBox fx:id="doorWallChoiceBox" prefWidth="150.0" />
+        <Button fx:id="addDoorButton" onAction="#onAddDoorButtonPressed" text="Добавить дверь" />
+    </VBox>
+
     </VBox>
 
 </HBox>
