@@ -55,17 +55,42 @@ public class Camera {
         setupCameraVectors(target);
     }
 
+    public void zoom(double zoomFactor) {
+        Point3D target = getRoomCenter();
+        Point3D cameraToTarget = target.subtract(position);
+
+        double currentDistance = calculateDistance(cameraToTarget);
+        double newDistance = currentDistance * zoomFactor;
+
+        Mesh roomMesh = sceneManager.getMeshById("0_floor");
+        double minDistance = 10;
+        double maxDistance = 1000;
+
+        if (roomMesh != null) {
+            Point3D[] roomBounds = roomMesh.getBounds();
+            double roomWidth = roomBounds[1].getX() - roomBounds[0].getX();
+            double roomDepth = roomBounds[1].getY() - roomBounds[0].getY();
+            double roomHeight = roomBounds[1].getZ() - roomBounds[0].getZ();
+
+            double maxDimension = Math.max(Math.max(roomWidth, roomDepth), roomHeight);
+
+            minDistance = Math.max(10, maxDimension * 0.1);
+            maxDistance = maxDimension * 5;
+        }
+
+        newDistance = Math.max(minDistance, Math.min(newDistance, maxDistance));
+
+        Point3D direction = new Point3D(
+                cameraToTarget.getX() / currentDistance,
+                cameraToTarget.getY() / currentDistance,
+                cameraToTarget.getZ() / currentDistance
+        );
+
+        this.position = target.subtract(direction.multiply(newDistance));
+        setupCameraVectors(target);
+    }
+
     private Point3D getRoomCenter() {
-//        for (Mesh mesh : sceneManager.getAllMeshes()) {
-//            if (mesh.isRoom()) {
-//                var bounds = mesh.getBounds();
-//                return new Point3D(
-//                        (bounds[0].getX() + bounds[1].getX()) / 2,
-//                        (bounds[0].getY() + bounds[1].getY()) / 2,
-//                        (bounds[0].getZ() + bounds[1].getZ()) / 2
-//                );
-//            }
-//        }
         return new Point3D(0, 0, 0);
     }
 

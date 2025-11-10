@@ -109,4 +109,15 @@
         <Button fx:id="applyRoomSizeButton" onAction="#onApplyRoomSizeButtonPressed" text="Применить" />
     </VBox>
 
+    <VBox fillWidth="true" spacing="10.0">
+        <padding>
+            <Insets bottom="10" left="10" right="10" top="10" />
+        </padding>
+        <Label text="Управление камерой" />
+        <HBox alignment="CENTER" spacing="10.0">
+            <Button maxWidth="Infinity" onAction="#onCameraZoomInButtonPressed" text="Приблизить" HBox.hgrow="ALWAYS" />
+            <Button maxWidth="Infinity" onAction="#onCameraZoomOutButtonPressed" text="Отдалить" HBox.hgrow="ALWAYS" />
+        </HBox>
+    </VBox>
+
 </VBox>
