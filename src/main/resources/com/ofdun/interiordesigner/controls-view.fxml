@@ -10,11 +10,11 @@
     <ListView fx:id="objectsListView" prefHeight="150" VBox.vgrow="SOMETIMES" />
 
     <HBox alignment="CENTER" spacing="10.0">
-        <Button fx:id="objectAddButton" maxWidth="Infinity" mnemonicParsing="false" onAction="#onObjectAddButton" text="Add" HBox.hgrow="ALWAYS" />
-        <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#onObjectRemoveButton" text="Remove" HBox.hgrow="ALWAYS" />
+        <Button fx:id="objectAddButton" maxWidth="Infinity" mnemonicParsing="false" onAction="#onObjectAddButton" text="Добавить" HBox.hgrow="ALWAYS" />
+        <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#onObjectRemoveButton" text="Удалить" HBox.hgrow="ALWAYS" />
     </HBox>
 
-    <Text text="Object" />
+    <Text text="Перемещение объекта" />
     <HBox alignment="CENTER" spacing="10.0">
         <VBox alignment="CENTER" spacing="5.0">
             <Text text="X" />
@@ -33,7 +33,7 @@
         </VBox>
     </HBox>
 
-    <Text text="Object rotation" />
+    <Text text="Поворот объекта" />
     <HBox alignment="CENTER" spacing="10.0">
         <VBox alignment="CENTER" spacing="5.0">
             <Text text="X" />
@@ -52,7 +52,7 @@
         </VBox>
     </HBox>
 
-    <Text text="Object scaling" />
+    <Text text="Масштабирование объекта" />
     <HBox alignment="CENTER" spacing="10.0">
             <Button maxWidth="Infinity" onAction="#onObjectScalePlusButtonPressed" text="+" />
             <Button maxWidth="Infinity" onAction="#onObjectScaleMinusButtonPressed" text="-" />
@@ -62,10 +62,10 @@
         <padding>
             <Insets bottom="10" left="10" right="10" top="10" />
         </padding>
-      <Label text="Lighting source" />
+      <Label text="Источник света" />
       <ChoiceBox fx:id="objectChoiceBox" prefWidth="150.0" />
         <HBox alignment="CENTER_LEFT" spacing="10.0">
-            <Label text="Intensity:" />
+            <Label text="Интенсивность:" />
             <Slider fx:id="lightIntensitySlider" blockIncrement="0.1" max="1.0" min="0.3" value="1.0" HBox.hgrow="ALWAYS" />
         </HBox>
     </VBox>
@@ -76,15 +76,15 @@
         </padding>
         <Label text="Room Colors" />
         <HBox alignment="CENTER_LEFT" spacing="10.0">
-            <Label text="Walls:" />
+            <Label text="Стены:" />
             <ColorPicker fx:id="wallsColorPicker" />
         </HBox>
         <HBox alignment="CENTER_LEFT" spacing="10.0">
-            <Label text="Floor:" />
+            <Label text="Пол:" />
             <ColorPicker fx:id="floorColorPicker" />
         </HBox>
         <HBox alignment="CENTER_LEFT" spacing="10.0">
-            <Label text="Ceiling:" />
+            <Label text="Потолок:" />
             <ColorPicker fx:id="ceilingColorPicker" />
         </HBox>
     </VBox>
@@ -93,20 +93,20 @@
         <padding>
             <Insets bottom="10" left="10" right="10" top="10" />
         </padding>
-        <Label text="Room Size" />
+        <Label text="Размеры комнаты" />
         <HBox alignment="CENTER_LEFT" spacing="10.0">
-            <Label text="Width:" minWidth="50" />
+            <Label text="Ширина:" minWidth="50" />
             <TextField fx:id="roomWidthField" prefWidth="80" text="100" />
         </HBox>
         <HBox alignment="CENTER_LEFT" spacing="10.0">
-            <Label text="Height:" minWidth="50" />
-            <TextField fx:id="roomHeightField" prefWidth="80" text="100" />
-        </HBox>
-        <HBox alignment="CENTER_LEFT" spacing="10.0">
-            <Label text="Depth:" minWidth="50" />
+            <Label text="Глубина:" minWidth="50" />
             <TextField fx:id="roomDepthField" prefWidth="80" text="100" />
         </HBox>
-        <Button fx:id="applyRoomSizeButton" onAction="#onApplyRoomSizeButtonPressed" text="Apply Size" />
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <Label text="Высота:" minWidth="50" />
+            <TextField fx:id="roomHeightField" prefWidth="80" text="100" />
+        </HBox>
+        <Button fx:id="applyRoomSizeButton" onAction="#onApplyRoomSizeButtonPressed" text="Применить" />
     </VBox>
 
 </VBox>

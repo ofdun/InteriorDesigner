@@ -60,10 +60,10 @@ public class ControlsController {
     private TextField roomWidthField;
 
     @FXML
-    private TextField roomHeightField;
+    private TextField roomDepthField;
 
     @FXML
-    private TextField roomDepthField;
+    private TextField roomHeightField;
 
     @FXML
     private Button applyRoomSizeButton;
@@ -77,12 +77,12 @@ public class ControlsController {
 
         if (objectChoiceBox != null) {
             objectChoiceBox.getItems().clear();
-            objectChoiceBox.getItems().add("None");
-            objectChoiceBox.setValue("None");
+            objectChoiceBox.getItems().add("Не выбрано");
+            objectChoiceBox.setValue("Не выбрано");
 
             objectChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
                 if (choiceBoxSelectionCallback != null) {
-                    String id = (newV == null || "None".equals(newV)) ? null : newV;
+                    String id = (newV == null || "Не выбрано".equals(newV)) ? null : newV;
                     choiceBoxSelectionCallback.accept(id);
                 } else {
                     handleButtonPress("render");
