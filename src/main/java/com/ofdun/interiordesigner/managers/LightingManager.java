@@ -40,7 +40,7 @@ public class LightingManager {
 
     public Color calculateLightingWithShadows(Point3D surfacePoint, Point3D surfaceNormal,
                                             Point3D viewDirection, Color materialColor,
-                                            List<Mesh> allMeshes) {
+                                            List<Mesh> allMeshes, String meshId) {
         if (lightSources.isEmpty()) {
             return materialColor;
         }
@@ -54,7 +54,7 @@ public class LightingManager {
 
             if (lightDistance > 0.1) {
                 isInShadow = ShadowRayTracer.isPointInShadow(
-                    surfacePoint, light.getPosition(), allMeshes, light.getSourceMeshId());
+                    surfacePoint, light.getPosition(), allMeshes, light.getSourceMeshId(), meshId);
             }
 
             Color lightContribution;

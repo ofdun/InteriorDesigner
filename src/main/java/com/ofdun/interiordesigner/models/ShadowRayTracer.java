@@ -9,11 +9,21 @@ public class ShadowRayTracer {
     private static final double MIN_SHADOW_DISTANCE = 0.05;
     private static final double SURFACE_EPSILON = 0.001;
 
+    private static final java.util.Map<String, Long> shadowRayTimePerMesh = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.Map<String, Integer> shadowRayCallsPerMesh = new java.util.concurrent.ConcurrentHashMap<>();
+
     public static boolean isPointInShadow(Point3D point, Point3D lightPosition, List<Mesh> allMeshes, String ignoreMeshId) {
+        return isPointInShadow(point, lightPosition, allMeshes, ignoreMeshId, null);
+    }
+
+    public static boolean isPointInShadow(Point3D point, Point3D lightPosition, List<Mesh> allMeshes, String ignoreMeshId, String currentMeshId) {
+        long startTime = System.nanoTime();
+
         Point3D lightDir = lightPosition.subtract(point);
         double lightDistance = lightDir.magnitude();
 
         if (lightDistance < MIN_SHADOW_DISTANCE) {
+            recordShadowRayTime(currentMeshId, System.nanoTime() - startTime);
             return false;
         }
 
@@ -25,6 +35,7 @@ public class ShadowRayTracer {
         double maxDistance = lightDistance - (adaptiveBias * 2);
 
         if (maxDistance <= SURFACE_EPSILON) {
+            recordShadowRayTime(currentMeshId, System.nanoTime() - startTime);
             return false;
         }
 
@@ -38,11 +49,20 @@ public class ShadowRayTracer {
             }
 
             if (rayIntersectsMesh(rayOrigin, shadowRayDirection, maxDistance, mesh)) {
+                recordShadowRayTime(currentMeshId, System.nanoTime() - startTime);
                 return true;
             }
         }
 
+        recordShadowRayTime(currentMeshId, System.nanoTime() - startTime);
         return false;
+    }
+
+    private static void recordShadowRayTime(String meshId, long timeNanos) {
+        if (meshId != null) {
+            shadowRayTimePerMesh.merge(meshId, timeNanos, Long::sum);
+            shadowRayCallsPerMesh.merge(meshId, 1, Integer::sum);
+        }
     }
 
     private static boolean rayIntersectsMesh(Point3D rayOrigin, Point3D rayDirection,
@@ -109,6 +129,19 @@ public class ShadowRayTracer {
         double t = f * edge2.dotProduct(q);
 
         return t > SURFACE_EPSILON && t < maxDistance - SURFACE_EPSILON;
+    }
+
+    public static java.util.Map<String, Long> getShadowRayTimePerMesh() {
+        return new java.util.HashMap<>(shadowRayTimePerMesh);
+    }
+
+    public static java.util.Map<String, Integer> getShadowRayCallsPerMesh() {
+        return new java.util.HashMap<>(shadowRayCallsPerMesh);
+    }
+
+    public static void resetStatistics() {
+        shadowRayTimePerMesh.clear();
+        shadowRayCallsPerMesh.clear();
     }
 
 }

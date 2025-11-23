@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
 @Singleton
@@ -29,6 +30,24 @@ public class CanvasController {
     private final Logger log = LoggerFactory.getLogger(CanvasController.class);
     private final Map<String, Runnable> eventCallbacks = new HashMap<>();
     private final Map<String, BiConsumer<Double, Double>> mouseEventCallbacks = new HashMap<>();
+
+    private final Map<String, Long> lightingTimePerMesh = new ConcurrentHashMap<>();
+    private final Map<String, Integer> lightingCallsPerMesh = new ConcurrentHashMap<>();
+
+    private final Map<String, Long> zBufferTimePerMesh = new ConcurrentHashMap<>();
+    private final Map<String, Integer> zBufferCallsPerMesh = new ConcurrentHashMap<>();
+
+    private final Map<String, Long> interpolateNormalsTimePerMesh = new ConcurrentHashMap<>();
+    private final Map<String, Integer> interpolateNormalsCallsPerMesh = new ConcurrentHashMap<>();
+
+    private final Map<String, Long> interpolateWorldPosTimePerMesh = new ConcurrentHashMap<>();
+    private final Map<String, Integer> interpolateWorldPosCallsPerMesh = new ConcurrentHashMap<>();
+
+    private final Map<String, Long> textureSamplingTimePerMesh = new ConcurrentHashMap<>();
+    private final Map<String, Integer> textureSamplingCallsPerMesh = new ConcurrentHashMap<>();
+
+    private final Map<String, Long> renderTriangleTimePerMesh = new ConcurrentHashMap<>();
+    private final Map<String, Integer> renderTriangleCallsPerMesh = new ConcurrentHashMap<>();
 
     @FXML
     private Canvas canvas;
@@ -179,6 +198,8 @@ public class CanvasController {
     }
 
     private void renderTriangle(TriangleData triangle, RenderingContext context) {
+        long startTime = System.nanoTime();
+
         Point3D[] sortedScreenPoints = triangle.screenPoints;
         Point3D p1 = sortedScreenPoints[0];
         Point3D p2 = sortedScreenPoints[1];
@@ -198,6 +219,10 @@ public class CanvasController {
         for (int y = y2 + 1; y <= y3; y++) {
             renderTriangleLine(p2, p3, p1, p3, y, triangle, barycentricDenominator, context);
         }
+
+        long endTime = System.nanoTime();
+        renderTriangleTimePerMesh.merge(triangle.meshId, endTime - startTime, Long::sum);
+        renderTriangleCallsPerMesh.merge(triangle.meshId, 1, Integer::sum);
     }
 
     private void renderTriangleLine(Point3D edgeStart1, Point3D edgeEnd1,
@@ -231,17 +256,31 @@ public class CanvasController {
             double oneOverZ = coords.w1 / z1 + coords.w2 / z2 + coords.w3 / z3;
             double z = 1.0 / oneOverZ;
 
-            if (zBuffer.testAndSet(x, y, z)) {
+            long zbufferStart = System.nanoTime();
+            boolean passedZTest = zBuffer.testAndSet(x, y, z);
+            long zbufferEnd = System.nanoTime();
+            zBufferTimePerMesh.merge(triangle.meshId, zbufferEnd - zbufferStart, Long::sum);
+            zBufferCallsPerMesh.merge(triangle.meshId, 1, Integer::sum);
+
+            if (passedZTest) {
+                long normalsStart = System.nanoTime();
                 Point3D interpolatedNormal = interpolateNormals(
                     x, y,
                     screenPoints[0], screenPoints[1], screenPoints[2],
                     triangle.normals[0], triangle.normals[1], triangle.normals[2]
                 );
+                long normalsEnd = System.nanoTime();
+                interpolateNormalsTimePerMesh.merge(triangle.meshId, normalsEnd - normalsStart, Long::sum);
+                interpolateNormalsCallsPerMesh.merge(triangle.meshId, 1, Integer::sum);
 
+                long worldPosStart = System.nanoTime();
                 Point3D interpolatedWorldPos = interpolateWorldPositionPerspectiveCorrect(
                     triangle.worldPoints[0], triangle.worldPoints[1], triangle.worldPoints[2],
                     coords, z1, z2, z3
                 );
+                long worldPosEnd = System.nanoTime();
+                interpolateWorldPosTimePerMesh.merge(triangle.meshId, worldPosEnd - worldPosStart, Long::sum);
+                interpolateWorldPosCallsPerMesh.merge(triangle.meshId, 1, Integer::sum);
 
                 Color finalColor;
 
@@ -249,17 +288,27 @@ public class CanvasController {
                     Point2D interpolatedUV = interpolateUVPerspectiveCorrect(
                         context.uv1, context.uv2, context.uv3, coords, z1, z2, z3);
 
+                    long texStart = System.nanoTime();
                     Color textureColor = sampleTexture(context.texture, interpolatedUV);
+                    long texEnd = System.nanoTime();
+                    textureSamplingTimePerMesh.merge(triangle.meshId, texEnd - texStart, Long::sum);
+                    textureSamplingCallsPerMesh.merge(triangle.meshId, 1, Integer::sum);
 
+                    long lightStart = System.nanoTime();
                     finalColor = context.lightingManager.calculateLightingWithShadows(
                         interpolatedWorldPos, interpolatedNormal,
-                        context.viewDirection, textureColor, context.allMeshes
+                        context.viewDirection, textureColor, context.allMeshes, triangle.meshId
                     );
+                    long lightEnd = System.nanoTime();
+                    recordLightingTime(triangle.meshId, lightEnd - lightStart);
                 } else {
+                    long lightStart = System.nanoTime();
                     finalColor = context.lightingManager.calculateLightingWithShadows(
                         interpolatedWorldPos, interpolatedNormal,
-                        context.viewDirection, context.materialColor, context.allMeshes
+                        context.viewDirection, context.materialColor, context.allMeshes, triangle.meshId
                     );
+                    long lightEnd = System.nanoTime();
+                    recordLightingTime(triangle.meshId, lightEnd - lightStart);
                 }
 
                 drawPoint(new Point2D(x, y), finalColor);
@@ -436,5 +485,116 @@ public class CanvasController {
         Point2D uv1, Point2D uv2, Point2D uv3,
         javafx.scene.image.Image texture
     ) {}
+
+    private void recordLightingTime(String meshId, long timeNanos) {
+        lightingTimePerMesh.merge(meshId, timeNanos, Long::sum);
+        lightingCallsPerMesh.merge(meshId, 1, Integer::sum);
+    }
+
+    public void printLightingStatistics() {
+        System.out.println("\n" + "=".repeat(130));
+        System.out.println("                              СТАТИСТИКА ПРОИЗВОДИТЕЛЬНОСТИ РЕНДЕРИНГА ПО МОДЕЛЯМ");
+        System.out.println("=".repeat(130));
+
+        Map<String, Long> shadowRayTimeMap = com.ofdun.interiordesigner.models.ShadowRayTracer.getShadowRayTimePerMesh();
+        Map<String, Integer> shadowRayCallsMap = com.ofdun.interiordesigner.models.ShadowRayTracer.getShadowRayCallsPerMesh();
+
+        java.util.Set<String> allMeshIds = new java.util.HashSet<>();
+        allMeshIds.addAll(renderTriangleTimePerMesh.keySet());
+        allMeshIds.addAll(zBufferTimePerMesh.keySet());
+        allMeshIds.addAll(lightingTimePerMesh.keySet());
+        allMeshIds.addAll(shadowRayTimeMap.keySet());
+
+        if (allMeshIds.isEmpty()) {
+            System.out.println("Нет данных для отображения");
+            System.out.println("=".repeat(130) + "\n");
+            return;
+        }
+
+        for (String meshId : allMeshIds) {
+            System.out.println("\n╔═ МОДЕЛЬ: " + meshId + " " + "═".repeat(Math.max(0, 115 - meshId.length())));
+
+            printMeshOperationStat("  Рендер треугольников",
+                renderTriangleTimePerMesh.getOrDefault(meshId, 0L),
+                renderTriangleCallsPerMesh.getOrDefault(meshId, 0));
+
+            printMeshOperationStat("  Z-Buffer тест",
+                zBufferTimePerMesh.getOrDefault(meshId, 0L),
+                zBufferCallsPerMesh.getOrDefault(meshId, 0));
+
+            printMeshOperationStat("  Интерполяция нормалей",
+                interpolateNormalsTimePerMesh.getOrDefault(meshId, 0L),
+                interpolateNormalsCallsPerMesh.getOrDefault(meshId, 0));
+
+            printMeshOperationStat("  Интерполяция мировых координат",
+                interpolateWorldPosTimePerMesh.getOrDefault(meshId, 0L),
+                interpolateWorldPosCallsPerMesh.getOrDefault(meshId, 0));
+
+            printMeshOperationStat("  Сэмплинг текстур",
+                textureSamplingTimePerMesh.getOrDefault(meshId, 0L),
+                textureSamplingCallsPerMesh.getOrDefault(meshId, 0));
+
+            printMeshOperationStat("  Вычисление освещения",
+                lightingTimePerMesh.getOrDefault(meshId, 0L),
+                lightingCallsPerMesh.getOrDefault(meshId, 0));
+
+            printMeshOperationStat("  Трассировка теней",
+                shadowRayTimeMap.getOrDefault(meshId, 0L),
+                shadowRayCallsMap.getOrDefault(meshId, 0));
+
+            long totalForMesh = renderTriangleTimePerMesh.getOrDefault(meshId, 0L) +
+                               zBufferTimePerMesh.getOrDefault(meshId, 0L) +
+                               interpolateNormalsTimePerMesh.getOrDefault(meshId, 0L) +
+                               interpolateWorldPosTimePerMesh.getOrDefault(meshId, 0L) +
+                               textureSamplingTimePerMesh.getOrDefault(meshId, 0L) +
+                               lightingTimePerMesh.getOrDefault(meshId, 0L) +
+                               shadowRayTimeMap.getOrDefault(meshId, 0L);
+
+            double totalMeshMs = totalForMesh / 1_000_000.0;
+            System.out.println("  " + "─".repeat(126));
+            System.out.printf("  %-40s | Всего: %10.2f мс%n", "ИТОГО для модели:", totalMeshMs);
+            System.out.println("╚" + "═".repeat(128));
+        }
+
+        System.out.println("\n>>> ИТОГОВАЯ СТАТИСТИКА ПО ВСЕМ МОДЕЛЯМ:");
+        System.out.println("─".repeat(130));
+
+        System.out.println("=".repeat(130) + "\n");
+    }
+
+    private void printMeshOperationStat(String operationName, long timeNanos, int calls) {
+        if (calls == 0) {
+            System.out.printf("  %-40s | Не использовалось%n", operationName);
+            return;
+        }
+
+        double timeMs = timeNanos / 1_000_000.0;
+        double avgTimeUs = (timeNanos / 1000.0) / calls;
+
+        System.out.printf("  %-40s | Всего: %10.2f мс | Вызовов: %8d | Среднее: %7.2f мкс%n",
+                operationName, timeMs, calls, avgTimeUs);
+    }
+
+    public void resetLightingStatistics() {
+        lightingTimePerMesh.clear();
+        lightingCallsPerMesh.clear();
+
+        zBufferTimePerMesh.clear();
+        zBufferCallsPerMesh.clear();
+
+        interpolateNormalsTimePerMesh.clear();
+        interpolateNormalsCallsPerMesh.clear();
+
+        interpolateWorldPosTimePerMesh.clear();
+        interpolateWorldPosCallsPerMesh.clear();
+
+        textureSamplingTimePerMesh.clear();
+        textureSamplingCallsPerMesh.clear();
+
+        renderTriangleTimePerMesh.clear();
+        renderTriangleCallsPerMesh.clear();
+
+        com.ofdun.interiordesigner.models.ShadowRayTracer.resetStatistics();
+    }
 }
 

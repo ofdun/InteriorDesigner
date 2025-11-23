@@ -461,6 +461,8 @@ public class SceneManager {
     }
 
     public void renderAllMeshes() {
+        canvasController.resetLightingStatistics();
+
         renderRoom();
 
         for (Mesh mesh : objects.values()) {
@@ -471,6 +473,7 @@ public class SceneManager {
         }
 
         canvasController.render();
+        canvasController.printLightingStatistics();
     }
 
     private void renderMesh(Mesh mesh) {
