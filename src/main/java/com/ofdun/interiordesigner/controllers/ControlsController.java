@@ -217,15 +217,21 @@ public class ControlsController {
     }
 
     public void addObjectToObjectListView(String object) {
-        Platform.runLater(() -> objectsListView.getItems().add(object));
+        if (objectsListView != null) {
+            Platform.runLater(() -> objectsListView.getItems().add(object));
+        }
     }
 
     public void removeObjectFromObjectListView(String object) {
-        Platform.runLater(() -> objectsListView.getItems().remove(object));
+        if (objectsListView != null) {
+            Platform.runLater(() -> objectsListView.getItems().remove(object));
+        }
     }
 
     public void removeMultipleObjectsFromObjectListView(List<String> objects) {
-        Platform.runLater(() -> objectsListView.getItems().removeAll(objects));
+        if (objectsListView != null) {
+            Platform.runLater(() -> objectsListView.getItems().removeAll(objects));
+        }
     }
 
     public void addLightningSourceChoiceBoxItem(String id) {
