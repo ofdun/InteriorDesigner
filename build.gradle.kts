@@ -89,3 +89,19 @@ task("runApp", JavaExec::class) {
         "--add-opens", "javafx.graphics/javafx.scene=ALL-UNNAMED"
     )
 }
+
+task("benchmark", JavaExec::class) {
+    group = "benchmark"
+    description = "Запускает бенчмарк производительности рендеринга с различным количеством потоков"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.ofdun.interiordesigner.benchmark.RenderingBenchmark")
+    jvmArgs = listOf(
+        "--module-path", classpath.asPath,
+        "--add-modules", "javafx.controls,javafx.fxml",
+        "--add-opens", "javafx.graphics/javafx.scene=ALL-UNNAMED",
+        "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+        "--add-opens", "java.desktop/java.awt=ALL-UNNAMED",
+        "-Xms2g",
+        "-Xmx4g"
+    )
+}

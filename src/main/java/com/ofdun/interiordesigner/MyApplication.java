@@ -39,6 +39,7 @@ public class MyApplication extends Application {
 
     @Override
     public void stop() throws Exception {
+        com.ofdun.interiordesigner.controllers.CanvasController.shutdownRenderExecutor();
         if (context != null) {
             context.close();
         }
